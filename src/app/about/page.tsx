@@ -221,12 +221,12 @@ export default function AboutPage() {
               {
                 icon: Printer,
                 title: "FDM 3D Printers",
-                desc: "Multiple Prusa and Bambu Lab printers running 24/7 with premium PLA filaments.",
+                desc: "Bambu Lab printers running 24/7 with premium PLA filaments.",
               },
               {
                 icon: Cpu,
-                title: "CO2 Laser Engraver",
-                desc: "60W precision laser for deep, clean engravings on wood, glass, and acrylic.",
+                title: "Laser Engraver",
+                desc: "Precision diode laser for clean engravings on wood, glass, and acrylic.",
               },
               {
                 icon: Lightbulb,
