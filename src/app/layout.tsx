@@ -3,6 +3,8 @@ import localFont from "next/font/local";
 import "./globals.css";
 import { Header } from "@/components/header";
 import { Footer } from "@/components/footer";
+import { Analytics } from "@/components/analytics";
+import { StructuredData } from "@/components/structured-data";
 
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",
@@ -58,6 +60,8 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased bg-charcoal-900 text-foreground`}
       >
+        <Analytics />
+        <StructuredData />
         <Header />
         <main className="min-h-screen">{children}</main>
         <Footer />
