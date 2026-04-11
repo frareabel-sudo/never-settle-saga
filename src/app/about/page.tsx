@@ -102,48 +102,46 @@ export default function AboutPage() {
             </p>
           </FadeIn>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
-            <FadeIn delay={0.1}>
-              <div className="bg-charcoal-800/60 rounded-lg border border-charcoal-50/10 overflow-hidden">
-                <div className="relative aspect-square">
-                  <Image
-                    src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=600&h=600&fit=crop"
-                    alt="Abel — Founder & Maker"
-                    fill
-                    className="object-cover"
-                  />
-                </div>
-                <div className="p-6">
-                  <h3 className="font-display text-xl font-bold mb-1">Abel</h3>
-                  <p className="text-amber-500/70 text-sm mb-3">Founder & Master Maker</p>
-                  <p className="text-sm text-gray-400 leading-relaxed">
-                    Self-taught 3D printing enthusiast turned professional craftsman.
-                    Abel runs every printer, calibrates every laser, and hand-finishes
-                    every product. His obsession with detail borders on unhealthy — and
-                    that&apos;s exactly what makes the work extraordinary.
+          <div className="max-w-5xl mx-auto">
+            <FadeIn>
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 items-center">
+                {/* Team photo */}
+                <div>
+                  <div className="relative aspect-[3/4] rounded-xl overflow-hidden border border-charcoal-50/10 shadow-2xl shadow-black/30">
+                    <Image
+                      src="/images/about/about-team.jpg"
+                      alt="Abel, Jennifer and family at the London Eye"
+                      fill
+                      className="object-cover"
+                    />
+                  </div>
+                  <p className="text-center text-sm text-gray-500 mt-4 italic">
+                    Abel, Jennifer &amp; family — London Eye, London 🇬🇧
                   </p>
                 </div>
-              </div>
-            </FadeIn>
-            <FadeIn delay={0.2}>
-              <div className="bg-charcoal-800/60 rounded-lg border border-charcoal-50/10 overflow-hidden">
-                <div className="relative aspect-square">
-                  <Image
-                    src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=600&h=600&fit=crop"
-                    alt="Jennifer — Co-Founder & Creative Director"
-                    fill
-                    className="object-cover"
-                  />
-                </div>
-                <div className="p-6">
-                  <h3 className="font-display text-xl font-bold mb-1">Jennifer</h3>
-                  <p className="text-amber-500/70 text-sm mb-3">Co-Founder & Creative Director</p>
-                  <p className="text-sm text-gray-400 leading-relaxed">
-                    The heart and voice of Never Settle Saga. Jennifer handles creative
-                    direction, brand identity, customer experience, and the personal
-                    touches that turn a product into a gift. Every handwritten note
-                    in your order? That&apos;s her.
-                  </p>
+
+                {/* Bios */}
+                <div className="space-y-8">
+                  <div>
+                    <h3 className="font-display text-xl font-bold mb-1">Abel</h3>
+                    <p className="text-amber-500/70 text-sm mb-3">Founder &amp; Master Maker</p>
+                    <p className="text-sm text-gray-400 leading-relaxed">
+                      Self-taught 3D printing enthusiast turned professional craftsman.
+                      Abel runs every printer, calibrates every laser, and hand-finishes
+                      every product. His obsession with detail borders on unhealthy — and
+                      that&apos;s exactly what makes the work extraordinary.
+                    </p>
+                  </div>
+                  <div className="border-t border-charcoal-50/10 pt-8">
+                    <h3 className="font-display text-xl font-bold mb-1">Jennifer</h3>
+                    <p className="text-amber-500/70 text-sm mb-3">Co-Founder &amp; Creative Director</p>
+                    <p className="text-sm text-gray-400 leading-relaxed">
+                      The heart and voice of Never Settle Saga. Jennifer handles creative
+                      direction, brand identity, customer experience, and the personal
+                      touches that turn a product into a gift. Every handwritten note
+                      in your order? That&apos;s her.
+                    </p>
+                  </div>
                 </div>
               </div>
             </FadeIn>
