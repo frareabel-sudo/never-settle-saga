@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowRight, Printer, Cpu, Lightbulb, Wrench } from "lucide-react";
+import { ArrowRight, Printer, Cpu, Lightbulb, Wrench, Scissors, PenTool } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { FadeIn, StaggerContainer, StaggerItem } from "@/components/motion-wrapper";
 
@@ -127,8 +127,8 @@ export default function AboutPage() {
                     <p className="text-amber-500/70 text-sm mb-3">Founder &amp; Master Maker</p>
                     <p className="text-sm text-gray-400 leading-relaxed">
                       Self-taught 3D printing enthusiast turned professional craftsman.
-                      Abel runs every printer, calibrates every laser, and hand-finishes
-                      every product. His obsession with detail borders on unhealthy — and
+                      Abel runs every printer, calibrates every laser and cutting machine,
+                      and hand-finishes every product. His obsession with detail borders on unhealthy — and
                       that&apos;s exactly what makes the work extraordinary.
                     </p>
                   </div>
@@ -216,17 +216,22 @@ export default function AboutPage() {
             </p>
           </FadeIn>
 
-          <StaggerContainer className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          <StaggerContainer className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {[
               {
                 icon: Printer,
-                title: "FDM 3D Printers",
-                desc: "Bambu Lab printers running 24/7 with premium PLA filaments.",
+                title: "3D Printers",
+                desc: "Bambu Lab and QIDI printers running 24/7 with premium PLA filaments.",
               },
               {
                 icon: Cpu,
                 title: "Laser Engraver",
-                desc: "Precision diode laser for clean engravings on wood, glass, and acrylic.",
+                desc: "Precision laser for clean engravings on wood, glass, and acrylic.",
+              },
+              {
+                icon: Scissors,
+                title: "Cricut & Silhouette",
+                desc: "Professional cutting machines for vinyl, paper, and intricate custom designs.",
               },
               {
                 icon: Lightbulb,
