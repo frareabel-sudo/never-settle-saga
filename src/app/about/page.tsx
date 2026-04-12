@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowRight, Printer, Cpu, Lightbulb, Wrench, Scissors, PenTool } from "lucide-react";
+import { ArrowRight, Printer, Cpu, Lightbulb, Wrench, Scissors } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { FadeIn, StaggerContainer, StaggerItem } from "@/components/motion-wrapper";
 
