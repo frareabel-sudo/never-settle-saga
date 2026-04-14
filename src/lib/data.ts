@@ -50,7 +50,33 @@ export const categories = [
   "Agendas & Planners",
 ] as const;
 
-export const products: Product[] = [];
+export const products: Product[] = [
+  {
+    id: "test",
+    name: "test",
+    slug: "test",
+    price: 10,
+    category: "test",
+    description: "test",
+    longDescription: "test",
+    images: ["https://images.unsplash.com/photo-1558618666-fcd25c85f82e?w=600&h=400&fit=crop"],
+    features: [],
+    customisable: false,
+    rating: 5,
+    reviews: 0,
+    status: "available",
+  },
+];
+
+/**
+ * Server-side product lookup. Checkout MUST use this to resolve price/name
+ * from a trusted productId — never trust client-supplied price data.
+ * Returns null for unknown IDs.
+ */
+export function getProductById(id: string): Product | null {
+  if (typeof id !== "string" || id.length === 0) return null;
+  return products.find((p) => p.id === id) ?? null;
+}
 
 export const testimonials: Testimonial[] = [
   {
