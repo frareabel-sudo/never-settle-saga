@@ -1,7 +1,11 @@
+import { unstable_cache } from "next/cache";
+import { getStripe } from "@/lib/stripe";
+
 export type ProductStatus = "available" | "coming-soon";
 
 export interface Product {
   id: string;
+  stripePriceId: string;
   name: string;
   slug: string;
   price: number;
@@ -50,31 +54,116 @@ export const categories = [
   "Agendas & Planners",
 ] as const;
 
-export const products: Product[] = [
-  {
-    id: "test",
-    name: "test",
-    slug: "test",
-    price: 10,
-    category: "test",
-    description: "test",
-    longDescription: "test",
-    images: ["https://images.unsplash.com/photo-1558618666-fcd25c85f82e?w=600&h=400&fit=crop"],
-    features: [],
-    customisable: false,
-    rating: 5,
-    reviews: 0,
-    status: "available",
-  },
-];
+function slugify(name: string): string {
+  return name
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "");
+}
+
+function safeJsonArray(raw: string | undefined): string[] {
+  if (!raw) return [];
+  try {
+    const parsed = JSON.parse(raw);
+    if (Array.isArray(parsed)) {
+      return parsed.filter((v): v is string => typeof v === "string");
+    }
+    return [];
+  } catch {
+    return [];
+  }
+}
+
+function safeJsonStringArray(raw: string | undefined): string[] | undefined {
+  if (!raw) return undefined;
+  try {
+    const parsed = JSON.parse(raw);
+    if (Array.isArray(parsed)) {
+      const arr = parsed.filter((v): v is string => typeof v === "string");
+      return arr.length > 0 ? arr : undefined;
+    }
+    return undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+async function fetchProductsFromStripe(): Promise<Product[]> {
+  const stripe = getStripe();
+  const list = await stripe.products.list({
+    active: true,
+    expand: ["data.default_price"],
+    limit: 100,
+  });
+
+  const products: Product[] = [];
+  for (const sp of list.data) {
+    const defaultPrice = sp.default_price;
+    if (
+      !defaultPrice ||
+      typeof defaultPrice === "string" ||
+      defaultPrice.unit_amount == null
+    ) {
+      continue;
+    }
+
+    const meta = sp.metadata ?? {};
+    const name = sp.name ?? "Untitled";
+    const slug = meta.slug && meta.slug.length > 0 ? meta.slug : slugify(name);
+    const description = sp.description ?? "";
+    const longDescription = meta.longDescription ?? description;
+    const originalPriceRaw = meta.originalPrice;
+    const originalPrice =
+      originalPriceRaw && !Number.isNaN(Number(originalPriceRaw))
+        ? Number(originalPriceRaw)
+        : undefined;
+
+    products.push({
+      id: sp.id,
+      stripePriceId: defaultPrice.id,
+      name,
+      slug,
+      price: defaultPrice.unit_amount / 100,
+      originalPrice,
+      category: meta.category && meta.category.length > 0 ? meta.category : "Uncategorised",
+      description,
+      longDescription,
+      images: Array.isArray(sp.images) ? sp.images : [],
+      features: safeJsonArray(meta.features),
+      customisable: meta.customisable === "true",
+      customOptions: safeJsonStringArray(meta.customOptions),
+      rating: Number.isFinite(Number(meta.rating)) ? Number(meta.rating) : 5,
+      reviews: Number.isFinite(Number(meta.reviews)) ? Number(meta.reviews) : 0,
+      badge: meta.badge && meta.badge.length > 0 ? meta.badge : undefined,
+      status: meta.status === "coming-soon" ? "coming-soon" : "available",
+    });
+  }
+
+  return products;
+}
+
+const getCachedProducts = unstable_cache(
+  fetchProductsFromStripe,
+  ["nss-stripe-products-v1"],
+  { revalidate: 60, tags: ["products"] }
+);
 
 /**
- * Server-side product lookup. Checkout MUST use this to resolve price/name
- * from a trusted productId — never trust client-supplied price data.
+ * Fetch all active products from Stripe.
+ * Cached for 60 seconds via unstable_cache; tag "products" for manual revalidation.
+ */
+export async function getProducts(): Promise<Product[]> {
+  return getCachedProducts();
+}
+
+/**
+ * Server-side product lookup by Stripe product id. Checkout MUST use this to
+ * resolve the Stripe price id — never trust client-supplied price data.
  * Returns null for unknown IDs.
  */
-export function getProductById(id: string): Product | null {
+export async function getProductById(id: string): Promise<Product | null> {
   if (typeof id !== "string" || id.length === 0) return null;
+  const products = await getProducts();
   return products.find((p) => p.id === id) ?? null;
 }
 
