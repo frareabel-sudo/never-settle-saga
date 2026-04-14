@@ -25,7 +25,9 @@ export function useCart() {
     count,
     total,
     addItem: cartStore.addItem.bind(cartStore),
-    removeItem: cartStore.removeItem.bind(cartStore),
-    updateQuantity: cartStore.updateQuantity.bind(cartStore),
+    removeLine: cartStore.removeLine.bind(cartStore),
+    updateLineQuantity: cartStore.updateLineQuantity.bind(cartStore),
+    lineKey: cartStore.lineKey,
+    unitPrice: cartStore.unitPrice,
   };
 }

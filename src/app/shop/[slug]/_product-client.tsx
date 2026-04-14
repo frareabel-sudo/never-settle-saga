@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import {
@@ -40,6 +40,39 @@ export default function ProductClient({
   const [notifyEmail, setNotifyEmail] = useState("");
   const [notifySubmitted, setNotifySubmitted] = useState(false);
   const { addItem } = useCart();
+
+  const hasVariants = Boolean(product.variants && product.variants.length > 0);
+  const [selectedOptions, setSelectedOptions] = useState<Record<string, string>>(() => {
+    if (!hasVariants) return {};
+    const primary = product.variants!.find((v) => v.primary && v.active) ?? product.variants!.find((v) => v.active);
+    return primary ? { ...primary.optionValues } : {};
+  });
+
+  const selectedVariant = useMemo(() => {
+    if (!hasVariants) return undefined;
+    return product.variants!.find(
+      (v) =>
+        v.active &&
+        Object.entries(selectedOptions).every(([k, val]) => v.optionValues[k] === val)
+    );
+  }, [hasVariants, product.variants, selectedOptions]);
+
+  function isOptionAvailable(optionName: string, value: string): boolean {
+    if (!product.variants) return true;
+    // Available if there's any active variant that matches all *other* selected options plus this value.
+    return product.variants.some((v) => {
+      if (!v.active) return false;
+      if (v.optionValues[optionName] !== value) return false;
+      for (const [k, val] of Object.entries(selectedOptions)) {
+        if (k === optionName) continue;
+        if (v.optionValues[k] !== val) return false;
+      }
+      return true;
+    });
+  }
+
+  const displayPrice = selectedVariant?.price ?? product.price;
+  const canAddToCart = !hasVariants || Boolean(selectedVariant);
 
   return (
     <>
@@ -136,7 +169,7 @@ export default function ProductClient({
                 {/* Price */}
                 <div className="flex items-baseline gap-3 mb-6">
                   <span className={`font-display text-3xl font-bold ${isComingSoon ? "text-amber-400/60" : "text-amber-400"}`}>
-                    {formatPrice(product.price)}
+                    {formatPrice(displayPrice)}
                   </span>
                   {product.originalPrice && (
                     <span className="text-lg text-gray-500 line-through">
@@ -206,6 +239,54 @@ export default function ProductClient({
                   </div>
                 ) : (
                   <>
+                    {/* Variant selectors */}
+                    {hasVariants && product.options && (
+                      <div className="mb-6 space-y-4">
+                        {product.options.map((opt) => (
+                          <div key={opt.name}>
+                            <div className="flex items-center justify-between mb-2">
+                              <h3 className="font-semibold text-sm uppercase tracking-wider text-amber-400/80">
+                                {opt.name}
+                              </h3>
+                              {selectedOptions[opt.name] && (
+                                <span className="text-sm text-gray-400">
+                                  {selectedOptions[opt.name]}
+                                </span>
+                              )}
+                            </div>
+                            <div className="flex flex-wrap gap-2">
+                              {opt.values.map((val) => {
+                                const available = isOptionAvailable(opt.name, val);
+                                const selected = selectedOptions[opt.name] === val;
+                                return (
+                                  <button
+                                    key={val}
+                                    type="button"
+                                    disabled={!available}
+                                    onClick={() =>
+                                      setSelectedOptions((prev) => ({
+                                        ...prev,
+                                        [opt.name]: val,
+                                      }))
+                                    }
+                                    className={`px-3.5 py-2 rounded-full text-sm border transition ${
+                                      selected
+                                        ? "bg-amber-500 text-charcoal-900 border-amber-500"
+                                        : available
+                                        ? "bg-charcoal-400/30 text-gray-200 border-charcoal-50/20 hover:border-amber-400/60"
+                                        : "bg-charcoal-400/10 text-gray-600 border-charcoal-50/10 line-through cursor-not-allowed"
+                                    }`}
+                                  >
+                                    {val}
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
                     {/* Customisation */}
                     {product.customisable && product.customOptions && (
                       <div className="mb-8 p-4 rounded-lg bg-charcoal-400/30 border border-charcoal-50/20">
@@ -252,14 +333,20 @@ export default function ProductClient({
                       <Button
                         size="lg"
                         className="flex-1 gap-2"
+                        disabled={!canAddToCart}
                         onClick={() => {
                           for (let i = 0; i < quantity; i++) {
-                            addItem(product, customText || undefined);
+                            addItem(product, {
+                              variant: selectedVariant,
+                              customisation: customText || undefined,
+                            });
                           }
                         }}
                       >
                         <ShoppingBag className="w-5 h-5" />
-                        Add to Cart — {formatPrice(product.price * quantity)}
+                        {canAddToCart
+                          ? `Add to Cart — ${formatPrice(displayPrice * quantity)}`
+                          : "Select options"}
                       </Button>
                     </div>
                   </>

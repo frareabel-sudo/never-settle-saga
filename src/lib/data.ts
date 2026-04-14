@@ -3,6 +3,21 @@ import { getStripe } from "@/lib/stripe";
 
 export type ProductStatus = "available" | "coming-soon";
 
+export interface ProductOption {
+  name: string;
+  values: string[];
+}
+
+export interface ProductVariant {
+  id: string;
+  stripePriceId: string;
+  sku?: string;
+  optionValues: Record<string, string>;
+  price: number;
+  active: boolean;
+  primary: boolean;
+}
+
 export interface Product {
   id: string;
   stripePriceId: string;
@@ -21,6 +36,8 @@ export interface Product {
   reviews: number;
   badge?: string;
   status: ProductStatus;
+  options?: ProductOption[];
+  variants?: ProductVariant[];
 }
 
 export interface BlogPost {
@@ -88,6 +105,56 @@ function safeJsonStringArray(raw: string | undefined): string[] | undefined {
   }
 }
 
+async function buildVariantsFromPrices(
+  stripe: ReturnType<typeof getStripe>,
+  productId: string,
+  defaultPriceId: string,
+): Promise<{ options?: ProductOption[]; variants?: ProductVariant[] }> {
+  const prices = await stripe.prices.list({
+    product: productId,
+    active: true,
+    limit: 100,
+  });
+
+  // Only treat as variants if at least one price has an option_ metadata key.
+  const variantPrices = prices.data.filter((p) =>
+    Object.keys(p.metadata ?? {}).some((k) => k.startsWith("opt_"))
+  );
+  if (variantPrices.length === 0) return {};
+
+  const optionMap = new Map<string, Set<string>>();
+  const variants: ProductVariant[] = [];
+
+  for (const price of variantPrices) {
+    if (price.unit_amount == null) continue;
+    const meta = price.metadata ?? {};
+    const optionValues: Record<string, string> = {};
+    for (const [key, value] of Object.entries(meta)) {
+      if (!key.startsWith("opt_")) continue;
+      const optName = key.slice(4);
+      optionValues[optName] = value;
+      if (!optionMap.has(optName)) optionMap.set(optName, new Set());
+      optionMap.get(optName)!.add(value);
+    }
+    variants.push({
+      id: meta.variantId || price.id,
+      stripePriceId: price.id,
+      sku: meta.sku || undefined,
+      optionValues,
+      price: price.unit_amount / 100,
+      active: price.active,
+      primary: price.id === defaultPriceId,
+    });
+  }
+
+  const options: ProductOption[] = Array.from(optionMap.entries()).map(([name, values]) => ({
+    name,
+    values: Array.from(values),
+  }));
+
+  return { options, variants };
+}
+
 async function fetchProductsFromStripe(): Promise<Product[]> {
   const stripe = getStripe();
   const list = await stripe.products.list({
@@ -118,6 +185,12 @@ async function fetchProductsFromStripe(): Promise<Product[]> {
         ? Number(originalPriceRaw)
         : undefined;
 
+    const { options, variants } = await buildVariantsFromPrices(
+      stripe,
+      sp.id,
+      defaultPrice.id,
+    );
+
     products.push({
       id: sp.id,
       stripePriceId: defaultPrice.id,
@@ -136,6 +209,8 @@ async function fetchProductsFromStripe(): Promise<Product[]> {
       reviews: Number.isFinite(Number(meta.reviews)) ? Number(meta.reviews) : 0,
       badge: meta.badge && meta.badge.length > 0 ? meta.badge : undefined,
       status: meta.status === "coming-soon" ? "coming-soon" : "available",
+      options,
+      variants,
     });
   }
 

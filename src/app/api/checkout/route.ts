@@ -5,6 +5,7 @@ import { getProductById } from "@/lib/data";
 interface CheckoutItemInput {
   productId: string;
   quantity: number;
+  variantId?: string;
 }
 
 const ALLOWED_CURRENCIES = ["gbp", "usd", "eur"] as const;
@@ -80,6 +81,7 @@ function validateBody(raw: unknown):
     const it = item as Record<string, unknown>;
     const productId = it.productId;
     const quantity = it.quantity;
+    const variantId = it.variantId;
     if (typeof productId !== "string" || productId.length === 0 || productId.length > 100) {
       return { ok: false };
     }
@@ -91,7 +93,16 @@ function validateBody(raw: unknown):
     ) {
       return { ok: false };
     }
-    clean.push({ productId, quantity });
+    if (variantId !== undefined) {
+      if (typeof variantId !== "string" || variantId.length === 0 || variantId.length > 100) {
+        return { ok: false };
+      }
+    }
+    clean.push({
+      productId,
+      quantity,
+      ...(typeof variantId === "string" ? { variantId } : {}),
+    });
   }
 
   return { ok: true, items: clean, email, currency };
@@ -129,8 +140,18 @@ export async function POST(request: NextRequest) {
       if (!product) {
         return NextResponse.json(GENERIC_BAD_REQUEST, { status: 400 });
       }
+      let priceId = product.stripePriceId;
+      if (item.variantId && product.variants) {
+        const variant = product.variants.find(
+          (v) => v.id === item.variantId && v.active,
+        );
+        if (!variant) {
+          return NextResponse.json(GENERIC_BAD_REQUEST, { status: 400 });
+        }
+        priceId = variant.stripePriceId;
+      }
       lineItems.push({
-        price: product.stripePriceId,
+        price: priceId,
         quantity: item.quantity,
       });
     }

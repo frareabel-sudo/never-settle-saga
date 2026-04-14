@@ -7,7 +7,7 @@ import { Trash2, Minus, Plus, ShoppingBag } from "lucide-react";
 import { useCart } from "@/hooks/use-cart";
 
 export default function CartPage() {
-  const { items, total, updateQuantity, removeItem } = useCart();
+  const { items, total, updateLineQuantity, removeLine, lineKey } = useCart();
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -31,6 +31,7 @@ export default function CartPage() {
           items: items.map((i) => ({
             productId: i.product.id,
             quantity: i.quantity,
+            ...(i.variant ? { variantId: i.variant.id } : {}),
           })),
         }),
       });
@@ -73,71 +74,81 @@ export default function CartPage() {
         <h1 className="text-4xl font-bold text-white mb-8">Your cart</h1>
         <div className="grid lg:grid-cols-[1fr_360px] gap-8">
           <ul className="space-y-4">
-            {items.map((item) => (
-              <li
-                key={item.product.id + (item.customisation ?? "")}
-                className="flex gap-4 p-4 rounded-xl bg-charcoal-800 border border-charcoal-700"
-              >
-                <div className="relative w-24 h-24 rounded-lg overflow-hidden bg-charcoal-700 shrink-0">
-                  {item.product.images[0] && (
-                    <Image
-                      src={item.product.images[0]}
-                      alt={item.product.name}
-                      fill
-                      sizes="96px"
-                      className="object-cover"
-                    />
-                  )}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex justify-between gap-2">
-                    <h3 className="text-white font-semibold truncate">
-                      {item.product.name}
-                    </h3>
-                    <button
-                      onClick={() => removeItem(item.product.id)}
-                      className="text-gray-500 hover:text-red-400 transition"
-                      aria-label="Remove item"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
+            {items.map((item) => {
+              const key = lineKey(item);
+              const unit = item.variant?.price ?? item.product.price;
+              const variantLabel = item.variant
+                ? Object.entries(item.variant.optionValues)
+                    .map(([, v]) => v)
+                    .join(" · ")
+                : null;
+              return (
+                <li
+                  key={key}
+                  className="flex gap-4 p-4 rounded-xl bg-charcoal-800 border border-charcoal-700"
+                >
+                  <div className="relative w-24 h-24 rounded-lg overflow-hidden bg-charcoal-700 shrink-0">
+                    {item.product.images[0] && (
+                      <Image
+                        src={item.product.images[0]}
+                        alt={item.product.name}
+                        fill
+                        sizes="96px"
+                        className="object-cover"
+                      />
+                    )}
                   </div>
-                  {item.customisation && (
-                    <p className="text-xs text-gray-500 mt-1 truncate">
-                      {item.customisation}
-                    </p>
-                  )}
-                  <div className="flex items-center justify-between mt-3">
-                    <div className="flex items-center gap-2">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex justify-between gap-2">
+                      <h3 className="text-white font-semibold truncate">
+                        {item.product.name}
+                      </h3>
                       <button
-                        onClick={() =>
-                          updateQuantity(item.product.id, item.quantity - 1)
-                        }
-                        className="w-7 h-7 rounded-full bg-charcoal-700 text-gray-300 hover:bg-charcoal-600 flex items-center justify-center"
-                        aria-label="Decrease quantity"
+                        onClick={() => removeLine(key)}
+                        className="text-gray-500 hover:text-red-400 transition"
+                        aria-label="Remove item"
                       >
-                        <Minus className="w-3 h-3" />
-                      </button>
-                      <span className="text-white text-sm w-6 text-center">
-                        {item.quantity}
-                      </span>
-                      <button
-                        onClick={() =>
-                          updateQuantity(item.product.id, item.quantity + 1)
-                        }
-                        className="w-7 h-7 rounded-full bg-charcoal-700 text-gray-300 hover:bg-charcoal-600 flex items-center justify-center"
-                        aria-label="Increase quantity"
-                      >
-                        <Plus className="w-3 h-3" />
+                        <Trash2 className="w-4 h-4" />
                       </button>
                     </div>
-                    <span className="text-amber-400 font-semibold">
-                      £{(item.product.price * item.quantity).toFixed(2)}
-                    </span>
+                    {variantLabel && (
+                      <p className="text-xs text-amber-400/80 mt-1 truncate">
+                        {variantLabel}
+                      </p>
+                    )}
+                    {item.customisation && (
+                      <p className="text-xs text-gray-500 mt-1 truncate">
+                        {item.customisation}
+                      </p>
+                    )}
+                    <div className="flex items-center justify-between mt-3">
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => updateLineQuantity(key, item.quantity - 1)}
+                          className="w-7 h-7 rounded-full bg-charcoal-700 text-gray-300 hover:bg-charcoal-600 flex items-center justify-center"
+                          aria-label="Decrease quantity"
+                        >
+                          <Minus className="w-3 h-3" />
+                        </button>
+                        <span className="text-white text-sm w-6 text-center">
+                          {item.quantity}
+                        </span>
+                        <button
+                          onClick={() => updateLineQuantity(key, item.quantity + 1)}
+                          className="w-7 h-7 rounded-full bg-charcoal-700 text-gray-300 hover:bg-charcoal-600 flex items-center justify-center"
+                          aria-label="Increase quantity"
+                        >
+                          <Plus className="w-3 h-3" />
+                        </button>
+                      </div>
+                      <span className="text-amber-400 font-semibold">
+                        £{(unit * item.quantity).toFixed(2)}
+                      </span>
+                    </div>
                   </div>
-                </div>
-              </li>
-            ))}
+                </li>
+              );
+            })}
           </ul>
 
           <aside className="p-6 rounded-xl bg-charcoal-800 border border-charcoal-700 h-fit space-y-5">

@@ -1,9 +1,10 @@
 "use client";
 
-import { Product } from "./data";
+import { Product, ProductVariant } from "./data";
 
 export interface CartItem {
   product: Product;
+  variant?: ProductVariant;
   quantity: number;
   customisation?: string;
 }
@@ -17,6 +18,14 @@ function notify() {
   listeners.forEach((l) => l());
 }
 
+function lineKey(item: CartItem): string {
+  return `${item.product.id}::${item.variant?.id ?? ""}::${item.customisation ?? ""}`;
+}
+
+function unitPrice(item: CartItem): number {
+  return item.variant?.price ?? item.product.price;
+}
+
 export const cartStore = {
   getItems(): CartItem[] {
     return cartItems;
@@ -28,37 +37,40 @@ export const cartStore = {
 
   getTotal(): number {
     return cartItems.reduce(
-      (sum, item) => sum + item.product.price * item.quantity,
+      (sum, item) => sum + unitPrice(item) * item.quantity,
       0
     );
   },
 
-  addItem(product: Product, customisation?: string) {
-    const existing = cartItems.find(
-      (item) =>
-        item.product.id === product.id &&
-        item.customisation === customisation
-    );
+  addItem(product: Product, opts?: { variant?: ProductVariant; customisation?: string }) {
+    const candidate: CartItem = {
+      product,
+      quantity: 1,
+      variant: opts?.variant,
+      customisation: opts?.customisation,
+    };
+    const key = lineKey(candidate);
+    const existing = cartItems.find((item) => lineKey(item) === key);
     if (existing) {
       existing.quantity += 1;
     } else {
-      cartItems = [...cartItems, { product, quantity: 1, customisation }];
+      cartItems = [...cartItems, candidate];
     }
     notify();
   },
 
-  removeItem(productId: string) {
-    cartItems = cartItems.filter((item) => item.product.id !== productId);
+  removeLine(key: string) {
+    cartItems = cartItems.filter((item) => lineKey(item) !== key);
     notify();
   },
 
-  updateQuantity(productId: string, quantity: number) {
+  updateLineQuantity(key: string, quantity: number) {
     if (quantity <= 0) {
-      this.removeItem(productId);
+      this.removeLine(key);
       return;
     }
     cartItems = cartItems.map((item) =>
-      item.product.id === productId ? { ...item, quantity } : item
+      lineKey(item) === key ? { ...item, quantity } : item
     );
     notify();
   },
@@ -67,4 +79,7 @@ export const cartStore = {
     listeners.add(listener);
     return () => listeners.delete(listener);
   },
+
+  lineKey,
+  unitPrice,
 };

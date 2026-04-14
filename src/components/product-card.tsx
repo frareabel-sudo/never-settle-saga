@@ -68,6 +68,13 @@ export function ProductCard({ product, index = 0 }: ProductCardProps) {
                 <Bell className="w-4 h-4" />
                 Notify Me
               </Button>
+            ) : product.variants && product.variants.length > 0 ? (
+              <Link href={`/shop/${product.slug}`} className="flex-1">
+                <Button size="sm" className="w-full gap-2">
+                  <ShoppingBag className="w-4 h-4" />
+                  Choose options
+                </Button>
+              </Link>
             ) : (
               <Button
                 size="sm"
