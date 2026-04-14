@@ -163,6 +163,10 @@ export async function POST(request: NextRequest) {
       success_url: `${request.nextUrl.origin}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${request.nextUrl.origin}/shop`,
       customer_email: email,
+      shipping_address_collection: {
+        allowed_countries: ["GB", "IE", "US", "CA", "AU", "NZ", "DE", "FR", "IT", "ES", "NL", "BE", "PT", "SE", "NO", "DK", "FI", "CH", "AT", "PL"],
+      },
+      phone_number_collection: { enabled: true },
       metadata: {
         customer_email: email,
       },
