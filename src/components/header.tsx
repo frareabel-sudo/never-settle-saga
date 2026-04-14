@@ -74,7 +74,7 @@ export function Header() {
             {/* Actions */}
             <div className="flex items-center gap-2">
               <Link
-                href="/shop"
+                href="/cart"
                 className="relative p-2.5 rounded-full text-gray-400 hover:text-amber-300 hover:bg-amber-500/10 transition-all duration-300"
                 aria-label="Shopping bag"
               >
