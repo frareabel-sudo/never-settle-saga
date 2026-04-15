@@ -4,8 +4,6 @@ import { CosmosClient, Database, Container } from "@azure/cosmos";
 // Mirrors the lazy-init pattern in command-centre/src/lib/azure.ts so
 // the two codebases stay compatible (same database, same containers).
 
-const useManagedIdentity = process.env.AZURE_USE_MANAGED_IDENTITY === "true";
-
 let cosmosClient: CosmosClient | null = null;
 let database: Database | null = null;
 const containers: Record<string, Container> = {};
@@ -13,16 +11,10 @@ const containers: Record<string, Container> = {};
 function getCosmosClient(): CosmosClient {
   if (!cosmosClient) {
     const endpoint = process.env.AZURE_COSMOS_ENDPOINT;
+    const key = process.env.AZURE_COSMOS_KEY;
     if (!endpoint) throw new Error("AZURE_COSMOS_ENDPOINT not set");
-    if (useManagedIdentity) {
-      // Lazy-require so we don't bundle @azure/identity unless needed.
-      const { DefaultAzureCredential } = require("@azure/identity");
-      cosmosClient = new CosmosClient({ endpoint, aadCredentials: new DefaultAzureCredential() });
-    } else {
-      const key = process.env.AZURE_COSMOS_KEY;
-      if (!key) throw new Error("AZURE_COSMOS_KEY not set");
-      cosmosClient = new CosmosClient({ endpoint, key });
-    }
+    if (!key) throw new Error("AZURE_COSMOS_KEY not set");
+    cosmosClient = new CosmosClient({ endpoint, key });
   }
   return cosmosClient;
 }
