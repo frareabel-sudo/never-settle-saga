@@ -11,15 +11,40 @@ export interface CartItem {
 
 type Listener = () => void;
 
+const STORAGE_KEY = "nss-cart-v1";
 let cartItems: CartItem[] = [];
+let hydrated = false;
 const listeners: Set<Listener> = new Set();
 
+function loadFromStorage() {
+  if (hydrated || typeof window === "undefined") return;
+  hydrated = true;
+  try {
+    const raw = window.localStorage.getItem(STORAGE_KEY);
+    if (!raw) return;
+    const parsed = JSON.parse(raw);
+    if (Array.isArray(parsed)) cartItems = parsed as CartItem[];
+  } catch {
+    // Corrupted localStorage — start with empty cart.
+  }
+}
+
+function persist() {
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(cartItems));
+  } catch {
+    // Quota exceeded or storage disabled — non-fatal.
+  }
+}
+
 function notify() {
+  persist();
   listeners.forEach((l) => l());
 }
 
 function lineKey(item: CartItem): string {
-  return `${item.product.id}::${item.variant?.id ?? ""}::${item.customisation ?? ""}`;
+  return `${item.product.id}::${item.variant?.id ?? "BASE"}::${item.customisation ?? "NONE"}`;
 }
 
 function unitPrice(item: CartItem): number {
@@ -28,21 +53,30 @@ function unitPrice(item: CartItem): number {
 
 export const cartStore = {
   getItems(): CartItem[] {
+    loadFromStorage();
     return cartItems;
   },
 
   getCount(): number {
+    loadFromStorage();
     return cartItems.reduce((sum, item) => sum + item.quantity, 0);
   },
 
   getTotal(): number {
+    loadFromStorage();
     return cartItems.reduce(
       (sum, item) => sum + unitPrice(item) * item.quantity,
       0
     );
   },
 
+  clear() {
+    cartItems = [];
+    notify();
+  },
+
   addItem(product: Product, opts?: { variant?: ProductVariant; customisation?: string }) {
+    loadFromStorage();
     const candidate: CartItem = {
       product,
       quantity: 1,
@@ -76,7 +110,21 @@ export const cartStore = {
   },
 
   subscribe(listener: Listener): () => void {
+    loadFromStorage();
     listeners.add(listener);
+    // Sync any change to localStorage from another tab
+    if (typeof window !== "undefined" && listeners.size === 1) {
+      window.addEventListener("storage", (e) => {
+        if (e.key !== STORAGE_KEY || e.newValue == null) return;
+        try {
+          const parsed = JSON.parse(e.newValue);
+          if (Array.isArray(parsed)) {
+            cartItems = parsed as CartItem[];
+            listeners.forEach((l) => l());
+          }
+        } catch { /* ignore */ }
+      });
+    }
     return () => listeners.delete(listener);
   },
 

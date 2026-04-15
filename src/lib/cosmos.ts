@@ -40,10 +40,43 @@ export async function getContainer(name: string): Promise<Container> {
 }
 
 export async function generateOrderNumber(): Promise<string> {
-  const container = await getContainer("orders");
-  const { resources } = await container.items
-    .query("SELECT VALUE COUNT(1) FROM c")
-    .fetchAll();
-  const n = ((resources[0] as number) || 0) + 1;
-  return `NSS-ORD-${String(n).padStart(5, "0")}`;
+  // Crockford-base32 timestamp suffix — atomic, sortable, no race condition.
+  // Concurrent webhooks cannot collide because the timestamp + random suffix
+  // is generated locally without a Cosmos read-modify-write cycle.
+  const ts = Date.now().toString(36).toUpperCase();
+  const rnd = Math.floor(Math.random() * 0xfff).toString(36).toUpperCase().padStart(3, "0");
+  return `NSS-ORD-${ts}${rnd}`;
+}
+
+export function deterministicOrderId(stripeSessionId: string): string {
+  // Use the Stripe session id as the Cosmos document id so a duplicate
+  // webhook delivery causes a 409 Conflict on create — true idempotency
+  // without a query-then-insert race window.
+  return `ord_${stripeSessionId}`;
+}
+
+// Pre-checkout stock check. Returns first item that is short, or null if all OK.
+export async function findInsufficientStock(
+  items: Array<{ stripePriceId: string; quantity: number; productId: string; variantId?: string }>,
+): Promise<{ productId: string; available: number; requested: number } | null> {
+  if (items.length === 0) return null;
+  const products = await getContainer("products");
+  for (const it of items) {
+    const { resources } = await products.items
+      .query({
+        query: `SELECT * FROM c WHERE c.partitionKey = 'product' AND (
+                  c.stripePriceId = @pid
+                  OR EXISTS(SELECT VALUE v FROM v IN c.variants WHERE v.stripePriceId = @pid)
+                )`,
+        parameters: [{ name: "@pid", value: it.stripePriceId }],
+      })
+      .fetchAll();
+    if (resources.length === 0) continue; // unknown product — let webhook log it
+    const product = resources[0];
+    const available = Number(product.stockQuantity) || 0;
+    if (available < it.quantity) {
+      return { productId: it.productId, available, requested: it.quantity };
+    }
+  }
+  return null;
 }

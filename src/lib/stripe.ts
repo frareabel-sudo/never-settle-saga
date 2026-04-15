@@ -12,3 +12,11 @@ export function getStripe(): Stripe {
   }
   return _stripe;
 }
+
+export function assertWebhookSecret(): string {
+  const secret = process.env.STRIPE_WEBHOOK_SECRET;
+  if (!secret) {
+    throw new Error("STRIPE_WEBHOOK_SECRET is not set — webhook handler cannot verify signatures");
+  }
+  return secret;
+}

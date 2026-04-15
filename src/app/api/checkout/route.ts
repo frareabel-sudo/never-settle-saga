@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getStripe } from "@/lib/stripe";
 import { getProductById } from "@/lib/data";
+import { findInsufficientStock } from "@/lib/cosmos";
 
 interface CheckoutItemInput {
   productId: string;
@@ -132,9 +133,8 @@ export async function POST(request: NextRequest) {
     const { items, email } = validated;
 
     // Server-side price lookup — NEVER trust client price/name.
-    // Use Stripe price_id directly so currency + amount come from Stripe,
-    // killing any possibility of client-side price tampering.
-    const lineItems = [];
+    const lineItems: Array<{ price: string; quantity: number }> = [];
+    const stockCheckItems: Array<{ stripePriceId: string; quantity: number; productId: string; variantId?: string }> = [];
     for (const item of items) {
       const product = await getProductById(item.productId);
       if (!product) {
@@ -142,18 +142,29 @@ export async function POST(request: NextRequest) {
       }
       let priceId = product.stripePriceId;
       if (item.variantId && product.variants) {
-        const variant = product.variants.find(
-          (v) => v.id === item.variantId && v.active,
-        );
+        const variant = product.variants.find((v) => v.id === item.variantId && v.active);
         if (!variant) {
           return NextResponse.json(GENERIC_BAD_REQUEST, { status: 400 });
         }
         priceId = variant.stripePriceId;
       }
-      lineItems.push({
-        price: priceId,
-        quantity: item.quantity,
-      });
+      lineItems.push({ price: priceId, quantity: item.quantity });
+      stockCheckItems.push({ stripePriceId: priceId, quantity: item.quantity, productId: item.productId, variantId: item.variantId });
+    }
+
+    // Pre-checkout stock guard — prevent oversells. Cosmos is source of truth.
+    try {
+      const short = await findInsufficientStock(stockCheckItems);
+      if (short) {
+        return NextResponse.json(
+          { error: "Insufficient stock", productId: short.productId, available: short.available, requested: short.requested },
+          { status: 409 },
+        );
+      }
+    } catch (e) {
+      // If the stock service is degraded, fail closed — better than overselling.
+      console.error("[checkout] stock check failed:", e);
+      return NextResponse.json({ error: "Inventory check unavailable, please retry shortly" }, { status: 503 });
     }
 
     const session = await getStripe().checkout.sessions.create({
@@ -163,13 +174,39 @@ export async function POST(request: NextRequest) {
       success_url: `${request.nextUrl.origin}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${request.nextUrl.origin}/shop`,
       customer_email: email,
+      allow_promotion_codes: true,
       shipping_address_collection: {
         allowed_countries: ["GB", "IE", "US", "CA", "AU", "NZ", "DE", "FR", "IT", "ES", "NL", "BE", "PT", "SE", "NO", "DK", "FI", "CH", "AT", "PL"],
       },
+      shipping_options: [
+        {
+          shipping_rate_data: {
+            type: "fixed_amount",
+            fixed_amount: { amount: 499, currency: "gbp" },
+            display_name: "Royal Mail Tracked 48",
+            delivery_estimate: { minimum: { unit: "business_day", value: 2 }, maximum: { unit: "business_day", value: 3 } },
+          },
+        },
+        {
+          shipping_rate_data: {
+            type: "fixed_amount",
+            fixed_amount: { amount: 699, currency: "gbp" },
+            display_name: "Royal Mail Tracked 24",
+            delivery_estimate: { minimum: { unit: "business_day", value: 1 }, maximum: { unit: "business_day", value: 2 } },
+          },
+        },
+      ],
       phone_number_collection: { enabled: true },
-      metadata: {
-        customer_email: email,
-      },
+      custom_fields: [
+        {
+          key: "notes",
+          label: { type: "custom", custom: "Order notes (optional)" },
+          type: "text",
+          optional: true,
+          text: { maximum_length: 500 },
+        },
+      ],
+      metadata: { customer_email: email },
     });
 
     return NextResponse.json({ sessionId: session.id, url: session.url });
