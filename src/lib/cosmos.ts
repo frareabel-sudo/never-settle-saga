@@ -73,7 +73,14 @@ export async function findInsufficientStock(
       .fetchAll();
     if (resources.length === 0) continue; // unknown product — let webhook log it
     const product = resources[0];
-    const available = Number(product.stockQuantity) || 0;
+    // If the selected line is a variant, check THAT variant's own stock — not
+    // the parent product's aggregate. Variants each carry their own counter.
+    const variant = Array.isArray(product.variants)
+      ? product.variants.find((v: { stripePriceId?: string }) => v.stripePriceId === it.stripePriceId)
+      : null;
+    const available = variant
+      ? Number(variant.stockQuantity) || 0
+      : Number(product.stockQuantity) || 0;
     if (available < it.quantity) {
       return { productId: it.productId, available, requested: it.quantity };
     }

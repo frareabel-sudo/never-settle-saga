@@ -287,9 +287,20 @@ async function deductStockForLineItems(lineItems: Stripe.LineItem[]) {
       }
 
       const product = matches[0];
-      const newQty = Math.max(0, (product.stockQuantity || 0) - qty);
-
-      product.stockQuantity = newQty;
+      // If the line item maps to a variant (per-variant stripePriceId), decrement
+      // the variant's own stockQuantity. Only fall back to the parent-level
+      // stockQuantity when the product has no variants (simple products).
+      const variant = Array.isArray(product.variants)
+        ? product.variants.find((v: { stripePriceId?: string }) => v.stripePriceId === stripePriceId)
+        : null;
+      let deductedFrom: string;
+      if (variant) {
+        variant.stockQuantity = Math.max(0, Number(variant.stockQuantity || 0) - qty);
+        deductedFrom = `variant ${variant.id || variant.name || ""}`;
+      } else {
+        product.stockQuantity = Math.max(0, Number(product.stockQuantity || 0) - qty);
+        deductedFrom = "product";
+      }
       product.updatedAt = new Date().toISOString();
       await productsContainer.item(product.id, "product").replace(product);
 
@@ -301,7 +312,7 @@ async function deductStockForLineItems(lineItems: Stripe.LineItem[]) {
         barcode: product.barcode || "",
         type: "out",
         quantity: qty,
-        reason: `Stripe order ${li.id}`,
+        reason: `Stripe order ${li.id} (${deductedFrom})`,
         createdAt: new Date().toISOString(),
       });
     } catch (err) {
@@ -405,7 +416,14 @@ async function handleRefund(rid: string, charge: Stripe.Charge) {
           .fetchAll();
         if (matches.length === 0) continue;
         const product = matches[0];
-        product.stockQuantity = (product.stockQuantity || 0) + (it.quantity || 0);
+        const variant = Array.isArray(product.variants)
+          ? product.variants.find((v: { stripePriceId?: string }) => v.stripePriceId === it.stripePriceId)
+          : null;
+        if (variant) {
+          variant.stockQuantity = Number(variant.stockQuantity || 0) + (it.quantity || 0);
+        } else {
+          product.stockQuantity = Number(product.stockQuantity || 0) + (it.quantity || 0);
+        }
         product.updatedAt = new Date().toISOString();
         await productsContainer.item(product.id, "product").replace(product);
         await movementsContainer.items.create({
@@ -545,8 +563,16 @@ export async function POST(request: NextRequest) {
         // Async payment methods (SEPA, bank redirects) finalize here AFTER
         // checkout.session.completed fires with payment_status="unpaid".
         const pi = event.data.object as Stripe.PaymentIntent;
-        const sessionId = pi.metadata?.checkout_session_id || (pi as unknown as { invoice?: string }).invoice;
-        if (sessionId && typeof sessionId === "string") {
+        let sessionId: string | undefined = pi.metadata?.checkout_session_id;
+        if (!sessionId) {
+          try {
+            const { data } = await getStripe().checkout.sessions.list({ payment_intent: pi.id, limit: 1 });
+            sessionId = data[0]?.id;
+          } catch (err) {
+            console.error(`[${rid}] sessions.list lookup failed for PI ${pi.id}:`, err);
+          }
+        }
+        if (sessionId) {
           console.log(`[${rid}] payment_intent.succeeded — re-running persist for session ${sessionId}`);
           await persistOrderFromSession(sessionId, rid);
           revalidateTag("products");
