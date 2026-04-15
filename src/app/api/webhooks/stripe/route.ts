@@ -18,10 +18,11 @@ async function persistOrderFromSession(sessionId: string, rid = "-") {
 
   // Re-fetch with expansions so we always have line_items + shipping.
   const session = await stripe.checkout.sessions.retrieve(sessionId, {
+    // Note: `shipping_details` and `customer_details` are returned by default
+    // on the session in API version 2026-03-25.dahlia and can no longer be
+    // passed to expand — Stripe 400s if they appear here.
     expand: [
       "line_items.data.price.product",
-      "customer_details",
-      "shipping_details",
       "payment_intent.payment_method",
       "total_details.breakdown.discounts.discount.coupon",
       "shipping_cost.shipping_rate",
