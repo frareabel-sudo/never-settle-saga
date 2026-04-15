@@ -48,14 +48,18 @@ function OrderConfirmation() {
       try {
         const res = await fetch(`/api/order/${encodeURIComponent(sessionId!)}`);
         if (cancelled) return;
-        if (res.ok) {
-          setOrder(await res.json());
+        if (res.status === 202) {
+          if (attempts < maxAttempts) {
+            attempts++;
+            setTimeout(poll, 1500);
+            return;
+          }
           setPending(false);
           return;
         }
-        if (res.status === 202 && attempts < maxAttempts) {
-          attempts++;
-          setTimeout(poll, 1500);
+        if (res.ok) {
+          setOrder(await res.json());
+          setPending(false);
           return;
         }
         setPending(false);
