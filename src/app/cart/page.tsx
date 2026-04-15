@@ -2,15 +2,29 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { useState } from "react";
-import { Trash2, Minus, Plus, ShoppingBag } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Trash2, Minus, Plus, ShoppingBag, Truck } from "lucide-react";
 import { useCart } from "@/hooks/use-cart";
+
+interface ShippingSettings {
+  rates: Array<{ id: string; label: string; priceGBP: number }>;
+  freeShippingThresholdGBP: number;
+  freeShippingMethod: string;
+}
 
 export default function CartPage() {
   const { items, total, updateLineQuantity, removeLine, lineKey } = useCart();
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [shipping, setShipping] = useState<ShippingSettings | null>(null);
+
+  useEffect(() => {
+    fetch("/api/settings/shipping")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d: ShippingSettings | null) => d && setShipping(d))
+      .catch(() => { /* non-blocking; checkout still works */ });
+  }, []);
 
   async function handleCheckout() {
     setError(null);
@@ -160,6 +174,25 @@ export default function CartPage() {
             <p className="text-xs text-gray-500">
               Shipping and taxes calculated at checkout.
             </p>
+            {shipping && shipping.freeShippingThresholdGBP > 0 && (() => {
+              const threshold = shipping.freeShippingThresholdGBP;
+              const qualifies = total >= threshold;
+              const away = Math.max(0, threshold - total);
+              const pct = Math.min(100, Math.round((total / threshold) * 100));
+              return (
+                <div className={`rounded-lg border p-3 text-xs ${qualifies ? "border-amber-500/60 bg-amber-500/10" : "border-charcoal-700 bg-charcoal-900"}`}>
+                  <div className="flex items-center gap-2 text-gray-200">
+                    <Truck className="w-3.5 h-3.5 text-amber-400" />
+                    {qualifies
+                      ? <span className="text-amber-300 font-medium">You&apos;ve unlocked free shipping 🎉</span>
+                      : <span>Add <strong className="text-amber-400">£{away.toFixed(2)}</strong> more for free shipping over £{threshold.toFixed(2)}</span>}
+                  </div>
+                  <div className="mt-2 h-1 rounded-full bg-charcoal-700 overflow-hidden">
+                    <div className="h-full bg-amber-500 transition-all" style={{ width: `${pct}%` }} />
+                  </div>
+                </div>
+              );
+            })()}
             <div>
               <label className="block text-sm text-gray-300 mb-2">
                 Email for order updates

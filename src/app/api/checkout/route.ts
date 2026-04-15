@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getStripe } from "@/lib/stripe";
 import { getProductById } from "@/lib/data";
 import { findInsufficientStock } from "@/lib/cosmos";
+import { getStoreSettings } from "@/lib/store-settings";
 
 interface CheckoutItemInput {
   productId: string;
@@ -109,6 +110,33 @@ function validateBody(raw: unknown):
   return { ok: true, items: clean, email, currency };
 }
 
+// Build Stripe shipping_options from Cosmos settings. Free shipping kicks in
+// when cart subtotal (pre-discount) hits `freeShippingThresholdGBP`, but only
+// for the rate id named in `freeShippingMethod`; other tiers keep their price
+// so the customer can still choose faster delivery.
+async function buildShippingOptions(subtotalGBP: number) {
+  const { shipping } = await getStoreSettings();
+  const threshold = shipping.freeShippingThresholdGBP;
+  const qualifiesForFree = threshold > 0 && subtotalGBP >= threshold;
+  return shipping.rates
+    .filter((r) => r.enabled)
+    .map((r) => {
+      const isFreeTier = qualifiesForFree && r.id === shipping.freeShippingMethod;
+      const amount = isFreeTier ? 0 : Math.round(r.priceGBP * 100);
+      return {
+        shipping_rate_data: {
+          type: "fixed_amount" as const,
+          fixed_amount: { amount, currency: "gbp" },
+          display_name: isFreeTier ? `${r.label} — Free` : r.label,
+          delivery_estimate: {
+            minimum: { unit: "business_day" as const, value: r.etaMinDays },
+            maximum: { unit: "business_day" as const, value: r.etaMaxDays },
+          },
+        },
+      };
+    });
+}
+
 export async function POST(request: NextRequest) {
   try {
     const ip = getClientIp(request);
@@ -135,21 +163,25 @@ export async function POST(request: NextRequest) {
     // Server-side price lookup — NEVER trust client price/name.
     const lineItems: Array<{ price: string; quantity: number }> = [];
     const stockCheckItems: Array<{ stripePriceId: string; quantity: number; productId: string; variantId?: string }> = [];
+    let subtotalGBP = 0;
     for (const item of items) {
       const product = await getProductById(item.productId);
       if (!product) {
         return NextResponse.json(GENERIC_BAD_REQUEST, { status: 400 });
       }
       let priceId = product.stripePriceId;
+      let unitPrice = product.price;
       if (item.variantId && product.variants) {
         const variant = product.variants.find((v) => v.id === item.variantId && v.active);
         if (!variant) {
           return NextResponse.json(GENERIC_BAD_REQUEST, { status: 400 });
         }
         priceId = variant.stripePriceId;
+        unitPrice = variant.price;
       }
       lineItems.push({ price: priceId, quantity: item.quantity });
       stockCheckItems.push({ stripePriceId: priceId, quantity: item.quantity, productId: item.productId, variantId: item.variantId });
+      subtotalGBP += unitPrice * item.quantity;
     }
 
     // Pre-checkout stock guard — prevent oversells. Cosmos is source of truth.
@@ -178,24 +210,7 @@ export async function POST(request: NextRequest) {
       shipping_address_collection: {
         allowed_countries: ["GB", "IE", "US", "CA", "AU", "NZ", "DE", "FR", "IT", "ES", "NL", "BE", "PT", "SE", "NO", "DK", "FI", "CH", "AT", "PL"],
       },
-      shipping_options: [
-        {
-          shipping_rate_data: {
-            type: "fixed_amount",
-            fixed_amount: { amount: 499, currency: "gbp" },
-            display_name: "Royal Mail Tracked 48",
-            delivery_estimate: { minimum: { unit: "business_day", value: 2 }, maximum: { unit: "business_day", value: 3 } },
-          },
-        },
-        {
-          shipping_rate_data: {
-            type: "fixed_amount",
-            fixed_amount: { amount: 699, currency: "gbp" },
-            display_name: "Royal Mail Tracked 24",
-            delivery_estimate: { minimum: { unit: "business_day", value: 1 }, maximum: { unit: "business_day", value: 2 } },
-          },
-        },
-      ],
+      shipping_options: await buildShippingOptions(subtotalGBP),
       phone_number_collection: { enabled: true },
       custom_fields: [
         {
