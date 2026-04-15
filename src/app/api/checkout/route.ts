@@ -203,7 +203,7 @@ export async function POST(request: NextRequest) {
           label: { type: "custom", custom: "Order notes (optional)" },
           type: "text",
           optional: true,
-          text: { maximum_length: 500 },
+          text: { maximum_length: 255 },
         },
       ],
       metadata: { customer_email: email },
