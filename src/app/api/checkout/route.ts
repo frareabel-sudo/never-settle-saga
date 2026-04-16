@@ -22,8 +22,12 @@ const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 const GENERIC_BAD_REQUEST = { error: "Invalid request" } as const;
 
-// ---- In-memory IP rate limit: 10 req / 60s ----
-const RATE_LIMIT_MAX = 10;
+// ---- In-memory IP rate limit: 5 req / 60s ----
+// Note: resets on cold start (advisory on Vercel). Stripe's own fraud
+// controls are the primary defence; this just throttles obvious abuse
+// within a single instance. Client IP is also forwarded into session
+// metadata for post-hoc auditing.
+const RATE_LIMIT_MAX = 5;
 const RATE_LIMIT_WINDOW_MS = 60_000;
 const rateLimitStore: Map<string, number[]> = new Map();
 
@@ -227,7 +231,11 @@ export async function POST(request: NextRequest) {
       payment_intent_data: {
         metadata: { checkout_session_id: "{CHECKOUT_SESSION_ID}" },
       },
-      metadata: { customer_email: email },
+      metadata: {
+        customer_email: email,
+        client_ip: ip,
+        vercel_id: request.headers.get("x-vercel-id") ?? "local",
+      },
     });
 
     return NextResponse.json({ sessionId: session.id, url: session.url });
