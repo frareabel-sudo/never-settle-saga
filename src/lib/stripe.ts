@@ -8,7 +8,10 @@ export function getStripe(): Stripe {
     if (!key) {
       throw new Error("STRIPE_SECRET_KEY is not set in environment variables");
     }
-    _stripe = new Stripe(key, { typescript: true });
+    _stripe = new Stripe(key, {
+      apiVersion: "2026-03-25.dahlia" as Stripe.LatestApiVersion,
+      typescript: true,
+    });
   }
   return _stripe;
 }
