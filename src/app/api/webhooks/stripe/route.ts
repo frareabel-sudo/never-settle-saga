@@ -6,6 +6,11 @@ import { sendEmail } from "@/lib/email/resend";
 import { renderOrderConfirmationEmail } from "@/lib/email/templates/order-confirmation";
 import { renderRefundConfirmationEmail } from "@/lib/email/templates/refund-confirmation";
 import Stripe from "stripe";
+import { createHash } from "crypto";
+
+function customerIdForEmail(email: string): string {
+  return "cust_" + createHash("sha1").update(email.toLowerCase()).digest("hex");
+}
 
 // Boot-time guard — fails the function cold-start if the secret is unset,
 // so the deploy errors loudly instead of silently 500ing every webhook.
@@ -63,42 +68,61 @@ async function persistOrderFromSession(sessionId: string, rid = "-") {
   const phone = session.customer_details?.phone || "";
   const recipientName = shipDetails?.name || name;
 
-  // Upsert customer
+  // Upsert customer using a deterministic id (sha1 of lowercased email).
+  // Try a point-read first; on 404 create; on 409 fall back to read+increment.
   let customerId: string | undefined;
   if (email) {
-    const { resources: existingCust } = await customersContainer.items
-      .query({
-        query: "SELECT * FROM c WHERE c.partitionKey = 'customer' AND LOWER(c.email) = @email",
-        parameters: [{ name: "@email", value: email.toLowerCase() }],
-      })
-      .fetchAll();
+    customerId = customerIdForEmail(email);
+    const orderTotal = (session.amount_total || 0) / 100;
+    const lastOrderAt = new Date(session.created * 1000).toISOString();
 
-    if (existingCust.length > 0) {
-      customerId = existingCust[0].id;
-      existingCust[0].totalOrders += 1;
-      existingCust[0].totalSpent += (session.amount_total || 0) / 100;
-      existingCust[0].lastOrderAt = new Date(session.created * 1000).toISOString();
-      existingCust[0].updatedAt = new Date().toISOString();
-      await customersContainer.item(customerId!, "customer").replace(existingCust[0]);
+    let existing: Record<string, unknown> | null = null;
+    try {
+      const { resource } = await customersContainer.item(customerId, "customer").read();
+      existing = (resource as Record<string, unknown>) || null;
+    } catch (err) {
+      const code = (err as { code?: number }).code;
+      if (code !== 404) throw err;
+    }
+
+    if (existing) {
+      existing.totalOrders = ((existing.totalOrders as number) || 0) + 1;
+      existing.totalSpent = ((existing.totalSpent as number) || 0) + orderTotal;
+      existing.lastOrderAt = lastOrderAt;
+      existing.updatedAt = new Date().toISOString();
+      await customersContainer.item(customerId, "customer").replace(existing);
     } else {
-      customerId = crypto.randomUUID();
-      await customersContainer.items.create({
-        id: customerId,
-        partitionKey: "customer",
-        email: email.toLowerCase(),
-        name,
-        phone,
-        shippingAddress: formattedAddress,
-        tags: ["webhook"],
-        notes: "",
-        totalOrders: 1,
-        totalSpent: (session.amount_total || 0) / 100,
-        currency: session.currency || "gbp",
-        firstOrderAt: new Date(session.created * 1000).toISOString(),
-        lastOrderAt: new Date(session.created * 1000).toISOString(),
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      });
+      try {
+        await customersContainer.items.create({
+          id: customerId,
+          partitionKey: "customer",
+          email: email.toLowerCase(),
+          name,
+          phone,
+          shippingAddress: formattedAddress,
+          tags: ["webhook"],
+          notes: "",
+          totalOrders: 1,
+          totalSpent: orderTotal,
+          currency: session.currency || "gbp",
+          firstOrderAt: lastOrderAt,
+          lastOrderAt,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        });
+      } catch (err) {
+        const code = (err as { code?: number }).code;
+        if (code !== 409) throw err;
+        // Concurrent webhook beat us — re-read and increment.
+        const { resource } = await customersContainer.item(customerId, "customer").read();
+        if (resource) {
+          resource.totalOrders = (resource.totalOrders || 0) + 1;
+          resource.totalSpent = (resource.totalSpent || 0) + orderTotal;
+          resource.lastOrderAt = lastOrderAt;
+          resource.updatedAt = new Date().toISOString();
+          await customersContainer.item(customerId, "customer").replace(resource);
+        }
+      }
     }
   }
 
@@ -286,23 +310,37 @@ async function deductStockForLineItems(lineItems: Stripe.LineItem[]) {
         continue;
       }
 
-      const product = matches[0];
-      // If the line item maps to a variant (per-variant stripePriceId), decrement
-      // the variant's own stockQuantity. Only fall back to the parent-level
-      // stockQuantity when the product has no variants (simple products).
-      const variant = Array.isArray(product.variants)
-        ? product.variants.find((v: { stripePriceId?: string }) => v.stripePriceId === stripePriceId)
-        : null;
-      let deductedFrom: string;
-      if (variant) {
-        variant.stockQuantity = Math.max(0, Number(variant.stockQuantity || 0) - qty);
-        deductedFrom = `variant ${variant.id || variant.name || ""}`;
-      } else {
-        product.stockQuantity = Math.max(0, Number(product.stockQuantity || 0) - qty);
-        deductedFrom = "product";
+      // Optimistic concurrency: re-apply the deduction up to 3 times if the
+      // product was modified between read and replace (412 Precondition Failed).
+      let product = matches[0];
+      let deductedFrom = "product";
+      let attempt = 0;
+      while (true) {
+        const variant = Array.isArray(product.variants)
+          ? product.variants.find((v: { stripePriceId?: string }) => v.stripePriceId === stripePriceId)
+          : null;
+        if (variant) {
+          variant.stockQuantity = Math.max(0, Number(variant.stockQuantity || 0) - qty);
+          deductedFrom = `variant ${variant.id || variant.name || ""}`;
+        } else {
+          product.stockQuantity = Math.max(0, Number(product.stockQuantity || 0) - qty);
+          deductedFrom = "product";
+        }
+        product.updatedAt = new Date().toISOString();
+        try {
+          await productsContainer.item(product.id, "product").replace(product, {
+            accessCondition: { type: "IfMatch", condition: product._etag as string },
+          });
+          break;
+        } catch (e) {
+          const code = (e as { code?: number }).code;
+          if (code !== 412 || attempt >= 2) throw e;
+          attempt++;
+          const { resource: fresh } = await productsContainer.item(product.id, "product").read();
+          if (!fresh) throw e;
+          product = fresh;
+        }
       }
-      product.updatedAt = new Date().toISOString();
-      await productsContainer.item(product.id, "product").replace(product);
 
       await movementsContainer.items.create({
         id: crypto.randomUUID(),
@@ -415,17 +453,32 @@ async function handleRefund(rid: string, charge: Stripe.Charge) {
           })
           .fetchAll();
         if (matches.length === 0) continue;
-        const product = matches[0];
-        const variant = Array.isArray(product.variants)
-          ? product.variants.find((v: { stripePriceId?: string }) => v.stripePriceId === it.stripePriceId)
-          : null;
-        if (variant) {
-          variant.stockQuantity = Number(variant.stockQuantity || 0) + (it.quantity || 0);
-        } else {
-          product.stockQuantity = Number(product.stockQuantity || 0) + (it.quantity || 0);
+        let product = matches[0];
+        let attempt = 0;
+        while (true) {
+          const variant = Array.isArray(product.variants)
+            ? product.variants.find((v: { stripePriceId?: string }) => v.stripePriceId === it.stripePriceId)
+            : null;
+          if (variant) {
+            variant.stockQuantity = Number(variant.stockQuantity || 0) + (it.quantity || 0);
+          } else {
+            product.stockQuantity = Number(product.stockQuantity || 0) + (it.quantity || 0);
+          }
+          product.updatedAt = new Date().toISOString();
+          try {
+            await productsContainer.item(product.id, "product").replace(product, {
+              accessCondition: { type: "IfMatch", condition: product._etag as string },
+            });
+            break;
+          } catch (e) {
+            const code = (e as { code?: number }).code;
+            if (code !== 412 || attempt >= 2) throw e;
+            attempt++;
+            const { resource: fresh } = await productsContainer.item(product.id, "product").read();
+            if (!fresh) throw e;
+            product = fresh;
+          }
         }
-        product.updatedAt = new Date().toISOString();
-        await productsContainer.item(product.id, "product").replace(product);
         await movementsContainer.items.create({
           id: crypto.randomUUID(),
           partitionKey: "movement",
