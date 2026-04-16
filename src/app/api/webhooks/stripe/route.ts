@@ -240,7 +240,26 @@ async function persistOrderFromSession(sessionId: string, rid = "-") {
 
   // Deduct stock per line_item. Non-fatal: stock errors are logged inside
   // deductStockForLineItems; the order is already safely persisted.
-  await deductStockForLineItems(lineItems);
+  // `stockDeducted` counts lines that matched a Cosmos product AND deducted
+  // without throwing. If all lines succeeded, mark the order so the CC
+  // Orders page "Mark Complete" step doesn't re-deduct.
+  const deductedCount = await deductStockForLineItems(lineItems);
+  if (deductedCount === lineItems.length) {
+    try {
+      const { resource: persisted } = await ordersContainer.item(orderId, "order").read();
+      if (persisted) {
+        persisted.stockDeducted = true;
+        persisted.updatedAt = new Date().toISOString();
+        await ordersContainer.item(orderId, "order").replace(persisted);
+      }
+    } catch (err) {
+      console.error(`[${rid}] failed to flag stockDeducted on order ${orderId}:`, err);
+    }
+  } else {
+    console.warn(
+      `[${rid}] partial stock deduction (${deductedCount}/${lineItems.length}) — order ${orderNumber} left unflagged; CC can still finish deduction on delivery`,
+    );
+  }
 
   console.log(`[${rid}] persisted order ${orderNumber} for session ${sessionId}`);
 
@@ -275,10 +294,11 @@ async function persistOrderFromSession(sessionId: string, rid = "-") {
   }
 }
 
-async function deductStockForLineItems(lineItems: Stripe.LineItem[]) {
-  if (lineItems.length === 0) return;
+async function deductStockForLineItems(lineItems: Stripe.LineItem[]): Promise<number> {
+  if (lineItems.length === 0) return 0;
   const productsContainer = await getContainer("products");
   const movementsContainer = await getContainer("stock-movements");
+  let deducted = 0;
 
   for (const li of lineItems) {
     try {
@@ -353,11 +373,13 @@ async function deductStockForLineItems(lineItems: Stripe.LineItem[]) {
         reason: `Stripe order ${li.id} (${deductedFrom})`,
         createdAt: new Date().toISOString(),
       });
+      deducted++;
     } catch (err) {
       console.error(`[webhook] stock deduction failed for line_item ${li.id}:`, err);
       // Continue with remaining items — don't fail the webhook.
     }
   }
+  return deducted;
 }
 
 async function persistFailedPayment(rid: string, paymentIntent: Stripe.PaymentIntent) {

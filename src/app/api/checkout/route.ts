@@ -204,7 +204,6 @@ export async function POST(request: NextRequest) {
     }
 
     const session = await getStripe().checkout.sessions.create({
-      automatic_payment_methods: { enabled: true },
       line_items: lineItems,
       mode: "payment",
       success_url: `${request.nextUrl.origin}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
