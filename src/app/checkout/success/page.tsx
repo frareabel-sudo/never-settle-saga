@@ -35,8 +35,10 @@ function OrderConfirmation() {
   const [pending, setPending] = useState(true);
 
   useEffect(() => {
-    cartStore.clear();
-  }, []);
+    // Only clear the cart on a confirmed return from Stripe — otherwise an
+    // accidental visit to /checkout/success would wipe the shopper's cart.
+    if (sessionId) cartStore.clear();
+  }, [sessionId]);
 
   useEffect(() => {
     if (!sessionId) { setPending(false); return; }
