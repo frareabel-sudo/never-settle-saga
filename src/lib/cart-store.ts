@@ -15,6 +15,7 @@ const STORAGE_KEY = "nss-cart-v1";
 let cartItems: CartItem[] = [];
 let hydrated = false;
 const listeners: Set<Listener> = new Set();
+let storageHandler: ((e: StorageEvent) => void) | null = null;
 
 function loadFromStorage() {
   if (hydrated || typeof window === "undefined") return;
@@ -111,10 +112,11 @@ export const cartStore = {
 
   subscribe(listener: Listener): () => void {
     loadFromStorage();
-    listeners.add(listener);
-    // Sync any change to localStorage from another tab
-    if (typeof window !== "undefined" && listeners.size === 1) {
-      window.addEventListener("storage", (e) => {
+    // Attach the cross-tab storage listener exactly once on first subscriber,
+    // and tear it down when the last subscriber unsubscribes — otherwise
+    // every component mount in dev/HMR added a fresh listener forever.
+    if (typeof window !== "undefined" && listeners.size === 0 && !storageHandler) {
+      storageHandler = (e: StorageEvent) => {
         if (e.key !== STORAGE_KEY || e.newValue == null) return;
         try {
           const parsed = JSON.parse(e.newValue);
@@ -123,9 +125,17 @@ export const cartStore = {
             listeners.forEach((l) => l());
           }
         } catch { /* ignore */ }
-      });
+      };
+      window.addEventListener("storage", storageHandler);
     }
-    return () => listeners.delete(listener);
+    listeners.add(listener);
+    return () => {
+      listeners.delete(listener);
+      if (listeners.size === 0 && typeof window !== "undefined" && storageHandler) {
+        window.removeEventListener("storage", storageHandler);
+        storageHandler = null;
+      }
+    };
   },
 
   lineKey,
