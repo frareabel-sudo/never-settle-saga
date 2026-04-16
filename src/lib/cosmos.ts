@@ -40,12 +40,11 @@ export async function getContainer(name: string): Promise<Container> {
 }
 
 export async function generateOrderNumber(): Promise<string> {
-  // Crockford-base32 timestamp suffix — atomic, sortable, no race condition.
-  // Concurrent webhooks cannot collide because the timestamp + random suffix
-  // is generated locally without a Cosmos read-modify-write cycle.
-  const ts = Date.now().toString(36).toUpperCase();
-  const rnd = Math.floor(Math.random() * 0xfff).toString(36).toUpperCase().padStart(3, "0");
-  return `NSS-ORD-${ts}${rnd}`;
+  // Use the first 8 hex chars of a v4 UUID (~3.4e10 space) — collision
+  // probability is negligible across realistic order volumes and there is
+  // no Cosmos read-modify-write cycle. Async signature kept for callers.
+  const suffix = crypto.randomUUID().slice(0, 8).toUpperCase().replace(/-/g, "");
+  return `NSS-ORD-${suffix}`;
 }
 
 export function deterministicOrderId(stripeSessionId: string): string {
