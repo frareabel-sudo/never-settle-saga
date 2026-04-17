@@ -22,17 +22,32 @@ async function persistOrderFromSession(sessionId: string, rid = "-") {
   const stripe = getStripe();
 
   // Re-fetch with expansions so we always have line_items + shipping.
-  const session = await stripe.checkout.sessions.retrieve(sessionId, {
-    // Note: `shipping_details` and `customer_details` are returned by default
-    // on the session in API version 2026-03-25.dahlia and can no longer be
-    // passed to expand — Stripe 400s if they appear here.
-    expand: [
-      "line_items.data.price.product",
-      "payment_intent.payment_method",
-      "total_details.breakdown.discounts.discount.coupon",
-      "shipping_cost.shipping_rate",
-    ],
-  });
+  // Note: `shipping_details` and `customer_details` are returned by default
+  // on the session in API version 2026-03-25.dahlia and can no longer be
+  // passed to expand — Stripe 400s if they appear here.
+  // Fall back to minimal expand if Stripe rejects any path (API upgrades
+  // have silently removed expandable fields in the past — see 686248f).
+  // We only require line_items for the order write; the rest is enrichment.
+  let session: Stripe.Checkout.Session;
+  try {
+    session = await stripe.checkout.sessions.retrieve(sessionId, {
+      expand: [
+        "line_items.data.price.product",
+        "payment_intent.payment_method",
+        "total_details.breakdown.discounts.discount.coupon",
+        "shipping_cost.shipping_rate",
+      ],
+    });
+  } catch (err) {
+    const type = (err as { type?: string }).type || "";
+    if (type !== "StripeInvalidRequestError") throw err;
+    console.warn(
+      `[${rid}] retrieve with full expand rejected — falling back to line_items only. msg=${(err as Error).message}`,
+    );
+    session = await stripe.checkout.sessions.retrieve(sessionId, {
+      expand: ["line_items.data.price.product"],
+    });
+  }
 
   if (session.payment_status !== "paid") {
     console.log(`[webhook] skipping persist — session ${sessionId} not paid`);
@@ -706,7 +721,12 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     // Returning 500 makes Stripe retry. Far better than silently dropping
     // the event and leaving the customer charged with no order record.
-    console.error(`[${rid}] webhook handler failed for ${event.type}:`, error);
+    const message = error instanceof Error ? error.message : String(error);
+    const stack = error instanceof Error ? error.stack : undefined;
+    const code = (error as { code?: number | string })?.code;
+    console.error(
+      `[${rid}] webhook handler failed for ${event.type} — code=${code} message=${message}\n${stack || ""}`,
+    );
     return NextResponse.json({ error: "Webhook handler failed", rid }, { status: 500 });
   }
 }
