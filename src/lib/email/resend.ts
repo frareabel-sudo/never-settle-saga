@@ -4,7 +4,7 @@ import { Resend } from "resend";
 // is verified in the Resend dashboard (Domains → Add → verify DNS). Until
 // then, fall back to the safe noreply@ address to avoid hard bounces.
 export const EMAIL_FROM =
-  process.env.RESEND_FROM || "Never Settle Saga <orders@neversettlesaga.com>";
+  process.env.RESEND_FROM || "Never Settle Saga <sales@neversettlesaga.com>";
 export const EMAIL_FROM_FALLBACK =
   "Never Settle Saga <noreply@neversettlesaga.com>";
 
