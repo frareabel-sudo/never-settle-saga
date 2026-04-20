@@ -1,8 +1,11 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { AnimatePresence, motion } from "framer-motion";
+import { photosForVariant } from "@/lib/normalizePhotos";
+import { NssWatermark } from "@/components/nss-watermark";
 import {
   ArrowLeft,
   Star,
@@ -74,6 +77,30 @@ export default function ProductClient({
   const displayPrice = selectedVariant?.price ?? product.price;
   const canAddToCart = !hasVariants || Boolean(selectedVariant);
 
+  // v3.32 — per-variant photo gallery. Tagged photos first, then masters, then Stripe
+  // fallback images. Empty → watermark placeholder.
+  const galleryImages = useMemo(() => {
+    const tagged = photosForVariant(product.photos ?? [], selectedVariant?.id);
+    const urls = tagged.map((p) => p.url);
+    if (urls.length > 0) return urls;
+    return product.images.length > 0 ? product.images : [];
+  }, [product.photos, product.images, selectedVariant?.id]);
+
+  // Preserve thumbnail index when the current image is still present in the new gallery;
+  // otherwise reset to 0. Guards against out-of-bounds when a variant has fewer photos.
+  useEffect(() => {
+    const currentUrl = galleryImages[selectedImage];
+    if (currentUrl == null) {
+      setSelectedImage(0);
+      return;
+    }
+    const nextIndex = galleryImages.indexOf(currentUrl);
+    if (nextIndex !== selectedImage && nextIndex >= 0) setSelectedImage(nextIndex);
+    if (nextIndex === -1) setSelectedImage(0);
+  }, [galleryImages, selectedImage]);
+
+  const heroUrl = galleryImages[selectedImage] ?? galleryImages[0];
+
   return (
     <>
       {/* Breadcrumb */}
@@ -99,14 +126,38 @@ export default function ProductClient({
             <FadeIn direction="left">
               <div>
                 <div className="relative aspect-square rounded-lg overflow-hidden bg-charcoal-400 border border-charcoal-50/30 mb-4">
-                  <Image
-                    src={product.images[selectedImage]}
-                    alt={product.name}
-                    fill
-                    className={`object-cover ${isComingSoon ? "opacity-80" : ""}`}
-                    priority
-                  />
-                  <div className="absolute top-4 left-4 flex gap-2">
+                  <AnimatePresence mode="sync" initial={false}>
+                    {heroUrl ? (
+                      <motion.div
+                        key={heroUrl}
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        transition={{ duration: 0.2 }}
+                        className="absolute inset-0"
+                      >
+                        <Image
+                          src={heroUrl}
+                          alt={product.name}
+                          fill
+                          className={`object-cover ${isComingSoon ? "opacity-80" : ""}`}
+                          priority
+                        />
+                      </motion.div>
+                    ) : (
+                      <motion.div
+                        key="watermark-hero"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        transition={{ duration: 0.2 }}
+                        className="absolute inset-0"
+                      >
+                        <NssWatermark className="w-full h-full [&_svg]:w-full [&_svg]:h-full" />
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                  <div className="absolute top-4 left-4 flex gap-2 z-10">
                     {isComingSoon ? (
                       <Badge variant="amber">Coming Soon</Badge>
                     ) : (
@@ -118,19 +169,26 @@ export default function ProductClient({
                   </div>
                 </div>
                 <div className="flex gap-3">
-                  {product.images.map((img, i) => (
-                    <button
-                      key={i}
-                      onClick={() => setSelectedImage(i)}
-                      className={`relative w-20 h-20 rounded-lg overflow-hidden border-2 transition-all ${
-                        selectedImage === i
-                          ? "border-amber-500 shadow-lg shadow-amber-500/20"
-                          : "border-charcoal-50/30 hover:border-amber-500/50"
-                      }`}
-                    >
-                      <Image src={img} alt="" fill className="object-cover" />
-                    </button>
-                  ))}
+                  <AnimatePresence mode="popLayout" initial={false}>
+                    {galleryImages.map((img, i) => (
+                      <motion.button
+                        key={img}
+                        layout
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        transition={{ duration: 0.2 }}
+                        onClick={() => setSelectedImage(i)}
+                        className={`relative w-20 h-20 rounded-lg overflow-hidden border-2 transition-all ${
+                          selectedImage === i
+                            ? "border-amber-500 shadow-lg shadow-amber-500/20"
+                            : "border-charcoal-50/30 hover:border-amber-500/50"
+                        }`}
+                      >
+                        <Image src={img} alt="" fill className="object-cover" />
+                      </motion.button>
+                    ))}
+                  </AnimatePresence>
                 </div>
               </div>
             </FadeIn>

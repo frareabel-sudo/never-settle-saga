@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { revalidateTag } from "next/cache";
 import { getStripe, assertWebhookSecret } from "@/lib/stripe";
 import { getContainer, generateOrderNumber, deterministicOrderId } from "@/lib/cosmos";
+import { updateVariantStock, updateProductStock } from "@/lib/stock";
 import { sendEmail } from "@/lib/email/resend";
 import { renderOrderConfirmationEmail } from "@/lib/email/templates/order-confirmation";
 import { renderRefundConfirmationEmail } from "@/lib/email/templates/refund-confirmation";
@@ -324,8 +325,10 @@ async function deductStockForLineItems(lineItems: Stripe.LineItem[]): Promise<nu
       const stripePriceId = price.id;
       const qty = li.quantity || 1;
 
-      // Find matching Cosmos product by stripePriceId (primary) or stripeProductId (fallback),
-      // or by matching a variant's stripePriceId.
+      // Look the Cosmos product up by stripePriceId / stripeProductId so we
+      // can resolve productId + variantId before handing off to the canonical
+      // writer. We pull the whole doc just to get name/barcode for the audit
+      // movement — the writer re-reads with ETag on the actual mutation.
       const { resources: matches } = await productsContainer.items
         .query({
           query: `SELECT * FROM c WHERE c.partitionKey = 'product' AND (
@@ -345,44 +348,34 @@ async function deductStockForLineItems(lineItems: Stripe.LineItem[]): Promise<nu
         continue;
       }
 
-      // Optimistic concurrency: re-apply the deduction up to 3 times if the
-      // product was modified between read and replace (412 Precondition Failed).
-      let product = matches[0];
+      const product = matches[0];
+      const variant = Array.isArray(product.variants)
+        ? product.variants.find((v: { stripePriceId?: string; id?: string }) => v.stripePriceId === stripePriceId)
+        : null;
+
+      let writeOk = false;
       let deductedFrom = "product";
-      let attempt = 0;
-      while (true) {
-        const variant = Array.isArray(product.variants)
-          ? product.variants.find((v: { stripePriceId?: string }) => v.stripePriceId === stripePriceId)
-          : null;
-        if (variant) {
-          variant.stockQuantity = Math.max(0, Number(variant.stockQuantity || 0) - qty);
-          deductedFrom = `variant ${variant.id || variant.name || ""}`;
-        } else {
-          product.stockQuantity = Math.max(0, Number(product.stockQuantity || 0) - qty);
-          deductedFrom = "product";
-        }
-        product.updatedAt = new Date().toISOString();
-        try {
-          await productsContainer.item(product.id, "product").replace(product, {
-            accessCondition: { type: "IfMatch", condition: product._etag as string },
-          });
-          break;
-        } catch (e) {
-          const code = (e as { code?: number }).code;
-          if (code !== 412 || attempt >= 2) throw e;
-          attempt++;
-          const { resource: fresh } = await productsContainer.item(product.id, "product").read();
-          if (!fresh) throw e;
-          product = fresh;
-        }
+      if (variant?.id) {
+        const res = await updateVariantStock(product.id, variant.id, -qty);
+        writeOk = res.ok;
+        deductedFrom = `variant ${variant.id}`;
+        if (!res.ok) console.error(`[webhook] variant stock write failed: ${res.error}`);
+      } else {
+        const res = await updateProductStock(product.id, -qty);
+        writeOk = res.ok;
+        deductedFrom = "product";
+        if (!res.ok) console.error(`[webhook] product stock write failed: ${res.error}`);
       }
+
+      if (!writeOk) continue;
 
       await movementsContainer.items.create({
         id: crypto.randomUUID(),
         partitionKey: "movement",
         productId: product.id,
         productName: product.name,
-        barcode: product.barcode || "",
+        variantId: variant?.id || "",
+        barcode: variant?.barcode || product.barcode || "",
         type: "out",
         quantity: qty,
         reason: `Stripe order ${li.id} (${deductedFrom})`,
@@ -490,39 +483,33 @@ async function handleRefund(rid: string, charge: Stripe.Charge) {
           })
           .fetchAll();
         if (matches.length === 0) continue;
-        let product = matches[0];
-        let attempt = 0;
-        while (true) {
-          const variant = Array.isArray(product.variants)
-            ? product.variants.find((v: { stripePriceId?: string }) => v.stripePriceId === it.stripePriceId)
-            : null;
-          if (variant) {
-            variant.stockQuantity = Number(variant.stockQuantity || 0) + (it.quantity || 0);
-          } else {
-            product.stockQuantity = Number(product.stockQuantity || 0) + (it.quantity || 0);
-          }
-          product.updatedAt = new Date().toISOString();
-          try {
-            await productsContainer.item(product.id, "product").replace(product, {
-              accessCondition: { type: "IfMatch", condition: product._etag as string },
-            });
-            break;
-          } catch (e) {
-            const code = (e as { code?: number }).code;
-            if (code !== 412 || attempt >= 2) throw e;
-            attempt++;
-            const { resource: fresh } = await productsContainer.item(product.id, "product").read();
-            if (!fresh) throw e;
-            product = fresh;
-          }
+        const product = matches[0];
+        const qty = it.quantity || 0;
+        if (qty <= 0) continue;
+        const variant = Array.isArray(product.variants)
+          ? product.variants.find((v: { stripePriceId?: string; id?: string }) => v.stripePriceId === it.stripePriceId)
+          : null;
+
+        let writeOk = false;
+        if (variant?.id) {
+          const res = await updateVariantStock(product.id, variant.id, qty);
+          writeOk = res.ok;
+          if (!res.ok) console.error(`[${rid}] variant restock failed: ${res.error}`);
+        } else {
+          const res = await updateProductStock(product.id, qty);
+          writeOk = res.ok;
+          if (!res.ok) console.error(`[${rid}] product restock failed: ${res.error}`);
         }
+        if (!writeOk) continue;
+
         await movementsContainer.items.create({
           id: crypto.randomUUID(),
           partitionKey: "movement",
           productId: product.id,
           productName: product.name,
+          variantId: variant?.id || "",
           type: "in",
-          quantity: it.quantity || 0,
+          quantity: qty,
           reason: `Refund — order ${order.orderNumber}`,
           createdAt: new Date().toISOString(),
         });

@@ -173,12 +173,24 @@ export async function POST(request: NextRequest) {
       if (!product) {
         return NextResponse.json(GENERIC_BAD_REQUEST, { status: 400 });
       }
+      if (product.publishToWebsite === false) {
+        return NextResponse.json(
+          { error: "Product unavailable", productId: item.productId },
+          { status: 409 },
+        );
+      }
       let priceId = product.stripePriceId;
       let unitPrice = product.price;
       if (item.variantId && product.variants) {
         const variant = product.variants.find((v) => v.id === item.variantId && v.active);
         if (!variant) {
           return NextResponse.json(GENERIC_BAD_REQUEST, { status: 400 });
+        }
+        if (variant.publishToWebsite === false) {
+          return NextResponse.json(
+            { error: "Variant unavailable", productId: item.productId, variantId: item.variantId },
+            { status: 409 },
+          );
         }
         priceId = variant.stripePriceId;
         unitPrice = variant.price;

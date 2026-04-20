@@ -1,11 +1,20 @@
 import { unstable_cache } from "next/cache";
 import { getStripe } from "@/lib/stripe";
+import { getContainer } from "@/lib/cosmos";
+import { normalizePhotos } from "@/lib/normalizePhotos";
 
 export type ProductStatus = "available" | "coming-soon";
 
 export interface ProductOption {
   name: string;
   values: string[];
+}
+
+export interface ProductPhoto {
+  url: string;
+  variantIds: string[];      // [] = master photo
+  order: number;
+  uploadedAt: string;
 }
 
 export interface ProductVariant {
@@ -16,6 +25,9 @@ export interface ProductVariant {
   price: number;
   active: boolean;
   primary: boolean;
+  barcode?: string;              // v3.32
+  publishToWebsite?: boolean;    // v3.32 — variant-level site visibility
+  stock?: number;                // v3.32 — canonical, sourced from Cosmos enrichment
 }
 
 export interface Product {
@@ -28,7 +40,7 @@ export interface Product {
   category: string;
   description: string;
   longDescription: string;
-  images: string[];
+  images: string[];                     // derived from photos; kept for legacy callers
   features: string[];
   customisable: boolean;
   customOptions?: string[];
@@ -38,6 +50,8 @@ export interface Product {
   status: ProductStatus;
   options?: ProductOption[];
   variants?: ProductVariant[];
+  photos?: ProductPhoto[];              // v3.32 — sourced from Cosmos via enrichFromCosmos
+  publishToWebsite?: boolean;           // v3.32 — product-level site visibility
 }
 
 export interface BlogPost {
@@ -155,6 +169,73 @@ async function buildVariantsFromPrices(
   return { options, variants };
 }
 
+interface CosmosVariant {
+  id: string;
+  stripePriceId?: string;
+  publishToWebsite?: boolean;
+  stock?: number;
+}
+
+interface CosmosProduct {
+  id: string;
+  stripeProductId?: string;
+  publishToWebsite?: boolean;
+  stockQuantity?: number;
+  variants?: CosmosVariant[];
+  photos?: unknown;
+}
+
+// Merge Cosmos-owned fields (publishToWebsite, photos, stock) onto Stripe products.
+// Stripe remains source of truth for price/name/description. Failures are non-fatal.
+async function enrichFromCosmos(products: Product[]): Promise<Product[]> {
+  if (products.length === 0) return products;
+  try {
+    const container = await getContainer("products");
+    const { resources } = await container.items
+      .query<CosmosProduct>({
+        query: "SELECT * FROM c WHERE c.partitionKey = 'product'",
+      })
+      .fetchAll();
+
+    const byStripeId = new Map<string, CosmosProduct>();
+    for (const c of resources) {
+      if (c.stripeProductId) byStripeId.set(c.stripeProductId, c);
+    }
+
+    return products.map((p) => {
+      const cp = byStripeId.get(p.id);
+      if (!cp) return p;
+
+      const variantMetaByPrice = new Map<string, CosmosVariant>();
+      const variantMetaById = new Map<string, CosmosVariant>();
+      for (const v of cp.variants ?? []) {
+        if (v.stripePriceId) variantMetaByPrice.set(v.stripePriceId, v);
+        if (v.id) variantMetaById.set(v.id, v);
+      }
+
+      const mergedVariants = p.variants?.map((v) => {
+        const cv = variantMetaByPrice.get(v.stripePriceId) ?? variantMetaById.get(v.id);
+        if (!cv) return v;
+        return {
+          ...v,
+          publishToWebsite: cv.publishToWebsite,
+          stock: typeof cv.stock === "number" ? cv.stock : v.stock,
+        };
+      });
+
+      return {
+        ...p,
+        publishToWebsite: cp.publishToWebsite,
+        variants: mergedVariants,
+        photos: normalizePhotos(cp.photos as never),
+      };
+    });
+  } catch (err) {
+    console.error("[data:enrichFromCosmos] failed — serving Stripe-only products:", err);
+    return products;
+  }
+}
+
 async function fetchProductsFromStripe(): Promise<Product[]> {
   const stripe = getStripe();
   const list = await stripe.products.list({
@@ -214,7 +295,7 @@ async function fetchProductsFromStripe(): Promise<Product[]> {
     });
   }
 
-  return products;
+  return enrichFromCosmos(products);
 }
 
 const getCachedProducts = unstable_cache(
@@ -223,23 +304,38 @@ const getCachedProducts = unstable_cache(
   { revalidate: 60, tags: ["products"] }
 );
 
-/**
- * Fetch all active products from Stripe.
- * Cached for 60 seconds via unstable_cache; tag "products" for manual revalidation.
- */
-export async function getProducts(): Promise<Product[]> {
-  return getCachedProducts();
+// Public-listing filter: hide products flagged `publishToWebsite: false` AND
+// strip unpublished variants from ones that remain. Does NOT mutate cache.
+function applyPublishFilter(products: Product[]): Product[] {
+  return products
+    .filter((p) => p.publishToWebsite !== false)
+    .map((p) => {
+      if (!p.variants || p.variants.length === 0) return p;
+      const visible = p.variants.filter((v) => v.publishToWebsite !== false);
+      if (visible.length === p.variants.length) return p;
+      return { ...p, variants: visible };
+    });
 }
 
 /**
- * Server-side product lookup by Stripe product id. Checkout MUST use this to
- * resolve the Stripe price id — never trust client-supplied price data.
- * Returns null for unknown IDs.
+ * Fetch active, publish-enabled products. Storefront-facing — callers that
+ * need the full catalogue (checkout resolution, etc.) should use the
+ * unfiltered accessor `getProductByIdRaw` instead.
+ */
+export async function getProducts(): Promise<Product[]> {
+  const all = await getCachedProducts();
+  return applyPublishFilter(all);
+}
+
+/**
+ * Server-side product lookup by Stripe product id. Returns unfiltered data so
+ * checkout can distinguish "product doesn't exist" from "product exists but is
+ * unpublished" and emit a clear error in each case.
  */
 export async function getProductById(id: string): Promise<Product | null> {
   if (typeof id !== "string" || id.length === 0) return null;
-  const products = await getProducts();
-  return products.find((p) => p.id === id) ?? null;
+  const all = await getCachedProducts();
+  return all.find((p) => p.id === id) ?? null;
 }
 
 export const testimonials: Testimonial[] = [
