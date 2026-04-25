@@ -37,7 +37,8 @@ export interface Product {
   slug: string;
   price: number;
   originalPrice?: number;
-  category: string;
+  category: string;                     // primary category (legacy + Stripe metadata.category)
+  categories?: string[];                // v3.33.4 — full multi-category list (Cosmos source of truth)
   description: string;
   longDescription: string;
   images: string[];                     // derived from photos; kept for legacy callers
@@ -222,6 +223,8 @@ interface CosmosProduct {
   stockQuantity?: number;
   variants?: CosmosVariant[];
   photos?: unknown;
+  category?: string;                  // legacy mirror
+  categories?: string[];              // v3.33.4 — multi-category source of truth
 }
 
 // Merge Cosmos-owned fields (publishToWebsite, photos, stock) onto Stripe products.
@@ -262,11 +265,20 @@ async function enrichFromCosmos(products: Product[]): Promise<Product[]> {
         };
       });
 
+      // v3.33.4 — Cosmos `categories[]` is the source of truth; fall back to Stripe-derived single
+      // `category` when Cosmos has no list yet (legacy products mid-migration).
+      const cosmosCategories =
+        Array.isArray(cp.categories) && cp.categories.length > 0
+          ? cp.categories
+          : (cp.category ? [cp.category] : undefined);
+
       return {
         ...p,
         publishToWebsite: cp.publishToWebsite,
         variants: mergedVariants,
         photos: normalizePhotos(cp.photos as never),
+        categories: cosmosCategories ?? p.categories,
+        category: cosmosCategories?.[0] ?? p.category,
       };
     });
   } catch (err) {
@@ -319,6 +331,9 @@ async function fetchProductsFromStripe(): Promise<Product[]> {
       price: defaultPrice.unit_amount / 100,
       originalPrice,
       category: meta.category && meta.category.length > 0 ? meta.category : "Uncategorised",
+      categories: meta.categories && meta.categories.length > 0
+        ? meta.categories.split(",").map((s) => s.trim()).filter(Boolean)
+        : (meta.category && meta.category.length > 0 ? [meta.category] : ["Uncategorised"]),
       description,
       longDescription,
       images: Array.isArray(sp.images) ? sp.images : [],

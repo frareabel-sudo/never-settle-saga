@@ -22,7 +22,12 @@ export default function ShopClient({
   const filtered = useMemo(() => {
     let result = products;
     if (activeCategory !== "All") {
-      result = result.filter((p) => p.category === activeCategory);
+      // v3.33.4 — match against multi-category list, falling back to legacy single mirror.
+      result = result.filter((p) =>
+        Array.isArray(p.categories) && p.categories.length > 0
+          ? p.categories.includes(activeCategory)
+          : p.category === activeCategory,
+      );
     }
     if (searchQuery) {
       const q = searchQuery.toLowerCase();
@@ -30,7 +35,8 @@ export default function ShopClient({
         (p) =>
           p.name.toLowerCase().includes(q) ||
           p.description.toLowerCase().includes(q) ||
-          p.category.toLowerCase().includes(q)
+          p.category.toLowerCase().includes(q) ||
+          (Array.isArray(p.categories) && p.categories.some((c) => c.toLowerCase().includes(q)))
       );
     }
     switch (sortBy) {
