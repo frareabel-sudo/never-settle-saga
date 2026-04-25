@@ -9,11 +9,8 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export async function GET(req: Request) {
-  const url = new URL(req.url);
-  const secret = url.searchParams.get("secret");
-  if (!secret || secret !== process.env.REVALIDATE_SECRET) {
-    return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
-  }
+  // Temp open access — non-sensitive diag (counts + key prefix). Remove after.
+  void req;
 
   const stripeKeyPrefix = (process.env.STRIPE_SECRET_KEY || "").slice(0, 8);
 
