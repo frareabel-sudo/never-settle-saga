@@ -9,6 +9,17 @@ export interface ShippingRate {
   enabled: boolean;
 }
 
+export interface ContactSettings {
+  address: string;
+  email: string;
+  hours: string;
+  social: {
+    instagram: string;
+    facebook: string;
+    twitter: string;
+  };
+}
+
 export interface StoreSettings {
   id: "store";
   partitionKey: "setting";
@@ -17,8 +28,16 @@ export interface StoreSettings {
     freeShippingThresholdGBP: number; // 0 = disabled
     freeShippingMethod: string; // rate.id that becomes free above threshold
   };
+  contact: ContactSettings;
   updatedAt: string;
 }
+
+export const DEFAULT_CONTACT_SETTINGS: ContactSettings = {
+  address: "London, UK",
+  email: "helpdesk@neversettlesaga.com",
+  hours: "Mon–Fri, 9am–6pm GMT",
+  social: { instagram: "", facebook: "", twitter: "" },
+};
 
 export const DEFAULT_STORE_SETTINGS: StoreSettings = {
   id: "store",
@@ -31,6 +50,7 @@ export const DEFAULT_STORE_SETTINGS: StoreSettings = {
     freeShippingThresholdGBP: 0,
     freeShippingMethod: "tracked48",
   },
+  contact: DEFAULT_CONTACT_SETTINGS,
   updatedAt: new Date(0).toISOString(),
 };
 
@@ -66,6 +86,11 @@ export async function saveStoreSettings(next: Partial<StoreSettings>): Promise<S
     id: "store",
     partitionKey: "setting",
     shipping: { ...current.shipping, ...(next.shipping || {}) },
+    contact: {
+      ...current.contact,
+      ...(next.contact || {}),
+      social: { ...current.contact.social, ...(next.contact?.social || {}) },
+    },
     updatedAt: new Date().toISOString(),
   };
   await c.items.upsert(updated);
@@ -78,5 +103,10 @@ function mergeWithDefaults(raw: StoreSettings): StoreSettings {
     ...DEFAULT_STORE_SETTINGS,
     ...raw,
     shipping: { ...DEFAULT_STORE_SETTINGS.shipping, ...(raw.shipping || {}) },
+    contact: {
+      ...DEFAULT_CONTACT_SETTINGS,
+      ...(raw.contact || {}),
+      social: { ...DEFAULT_CONTACT_SETTINGS.social, ...(raw.contact?.social || {}) },
+    },
   };
 }

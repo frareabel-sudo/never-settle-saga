@@ -1,14 +1,29 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Mail, MapPin, Clock, Globe, MessageCircle, Share2, Send } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { FadeIn } from "@/components/motion-wrapper";
+import { DEFAULT_CONTACT_SETTINGS, type ContactSettings } from "@/lib/store-settings";
 
 export default function ContactPage() {
   const [submitted, setSubmitted] = useState(false);
+  const [contact, setContact] = useState<ContactSettings>(DEFAULT_CONTACT_SETTINGS);
+
+  useEffect(() => {
+    fetch("/api/settings/contact")
+      .then((r) => r.json())
+      .then((d) => d.success && d.contact && setContact(d.contact))
+      .catch(() => {});
+  }, []);
+
+  const socials = [
+    { Icon: Globe, label: "Instagram", href: contact.social.instagram },
+    { Icon: MessageCircle, label: "Facebook", href: contact.social.facebook },
+    { Icon: Share2, label: "Twitter", href: contact.social.twitter },
+  ].filter((s) => s.href && s.href.trim().length > 0);
 
   return (
     <>
@@ -43,19 +58,18 @@ export default function ContactPage() {
                       {
                         icon: Mail,
                         title: "Email",
-                        text: "helpdesk@neversettlesaga.com",
+                        text: contact.email,
                         sub: "We reply within 24 hours",
                       },
                       {
                         icon: MapPin,
                         title: "Location",
-                        text: "East London, UK",
-                        sub: "Workshop visits by appointment",
+                        text: contact.address,
                       },
                       {
                         icon: Clock,
                         title: "Hours",
-                        text: "Mon–Fri, 9am–6pm GMT",
+                        text: contact.hours,
                         sub: "Weekend orders processed Monday",
                       },
                     ].map((item) => (
@@ -66,7 +80,9 @@ export default function ContactPage() {
                         <div>
                           <p className="font-medium text-sm">{item.title}</p>
                           <p className="text-amber-400/80 text-sm">{item.text}</p>
-                          <p className="text-xs text-gray-500 mt-0.5">{item.sub}</p>
+                          {item.sub && (
+                            <p className="text-xs text-gray-500 mt-0.5">{item.sub}</p>
+                          )}
                         </div>
                       </div>
                     ))}
@@ -74,27 +90,27 @@ export default function ContactPage() {
                 </div>
 
                 {/* Socials */}
-                <div>
-                  <h3 className="font-display font-semibold text-sm uppercase tracking-wider text-amber-400/80 mb-4">
-                    Follow Us
-                  </h3>
-                  <div className="flex gap-3">
-                    {[
-                      { icon: Globe, label: "Instagram", href: "#" },
-                      { icon: MessageCircle, label: "Facebook", href: "#" },
-                      { icon: Share2, label: "Twitter", href: "#" },
-                    ].map((s) => (
-                      <a
-                        key={s.label}
-                        href={s.href}
-                        aria-label={s.label}
-                        className="w-10 h-10 rounded-full border border-charcoal-50 flex items-center justify-center text-gray-400 hover:text-amber-400 hover:border-amber-500/50 transition-colors"
-                      >
-                        <s.icon className="w-4 h-4" />
-                      </a>
-                    ))}
+                {socials.length > 0 && (
+                  <div>
+                    <h3 className="font-display font-semibold text-sm uppercase tracking-wider text-amber-400/80 mb-4">
+                      Follow Us
+                    </h3>
+                    <div className="flex gap-3">
+                      {socials.map((s) => (
+                        <a
+                          key={s.label}
+                          href={s.href}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          aria-label={s.label}
+                          className="w-10 h-10 rounded-full border border-charcoal-50 flex items-center justify-center text-gray-400 hover:text-amber-400 hover:border-amber-500/50 transition-colors"
+                        >
+                          <s.Icon className="w-4 h-4" />
+                        </a>
+                      ))}
+                    </div>
                   </div>
-                </div>
+                )}
 
                 {/* FAQ nudge */}
                 <div className="p-4 rounded-lg bg-charcoal-400/30 border border-charcoal-50/20">

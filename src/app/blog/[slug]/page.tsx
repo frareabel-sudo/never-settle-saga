@@ -1,20 +1,20 @@
-"use client";
-
 import Image from "next/image";
 import Link from "next/link";
 import { ArrowLeft, Clock, User, ChevronRight } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { FadeIn } from "@/components/motion-wrapper";
-import { blogPosts } from "@/lib/data";
+import { getBlogPostBySlug } from "@/lib/blog";
 import { notFound } from "next/navigation";
 
-export default function BlogPostPage({
+export const revalidate = 60;
+
+export default async function BlogPostPage({
   params,
 }: {
   params: { slug: string };
 }) {
-  const post = blogPosts.find((p) => p.slug === params.slug);
+  const post = await getBlogPostBySlug(params.slug);
   if (!post) notFound();
 
   return (
@@ -43,51 +43,42 @@ export default function BlogPostPage({
               <span className="flex items-center gap-1.5">
                 <User className="w-4 h-4" /> {post.author}
               </span>
-              <span>{post.date}</span>
+              <span>{post.date.slice(0, 10)}</span>
               <span className="flex items-center gap-1.5">
                 <Clock className="w-4 h-4" /> {post.readTime} read
               </span>
             </div>
           </FadeIn>
 
-          <FadeIn delay={0.2}>
-            <div className="relative aspect-[16/9] rounded-lg overflow-hidden mb-10">
-              <Image
-                src={post.image}
-                alt={post.title}
-                fill
-                className="object-cover"
-                priority
-              />
-            </div>
-          </FadeIn>
+          {post.image && (
+            <FadeIn delay={0.2}>
+              <div className="relative aspect-[16/9] rounded-lg overflow-hidden mb-10">
+                <Image
+                  src={post.image}
+                  alt={post.title}
+                  fill
+                  className="object-cover"
+                  priority
+                />
+              </div>
+            </FadeIn>
+          )}
 
           <FadeIn delay={0.3}>
             <div className="prose prose-invert prose-amber max-w-none">
-              <p className="text-lg text-gray-300 leading-relaxed mb-6">
-                {post.excerpt}
-              </p>
-              <p className="text-gray-400 leading-relaxed mb-6">
-                This is a placeholder for the full blog post content. In a production
-                environment, this would be fetched from a CMS like Sanity, Contentful,
-                or stored as MDX files. The content would include rich text, images,
-                embedded videos, and more.
-              </p>
-              <h2 className="font-display text-2xl font-bold text-foreground mt-10 mb-4">
-                The Craft Behind the Story
-              </h2>
-              <p className="text-gray-400 leading-relaxed mb-6">
-                Every product we create carries a story — not just the one you
-                commission, but the one written in every layer of filament, every
-                pass of the laser, every careful hand-finish. Understanding the
-                process helps you appreciate why these creations are different
-                from anything you&apos;ll find mass-produced.
-              </p>
-              <p className="text-gray-400 leading-relaxed mb-6">
-                We invite you to explore our workshop process, learn about the
-                materials we carefully select, and discover why &quot;never settling&quot;
-                isn&apos;t just a name — it&apos;s a promise we make with every order.
-              </p>
+              {post.excerpt && (
+                <p className="text-lg text-gray-300 leading-relaxed mb-6">
+                  {post.excerpt}
+                </p>
+              )}
+              {post.body ? (
+                <div
+                  className="text-gray-300 leading-relaxed"
+                  dangerouslySetInnerHTML={{ __html: post.body }}
+                />
+              ) : (
+                <p className="text-gray-500 italic">Full post coming soon.</p>
+              )}
             </div>
           </FadeIn>
 
