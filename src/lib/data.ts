@@ -75,7 +75,9 @@ export interface Testimonial {
   product: string;
 }
 
-export const categories = [
+// v3.33.3 — Categories now live in Cosmos and are managed via CC. The static
+// list below is kept as a fallback for hard failures (Cosmos unreachable etc).
+const FALLBACK_CATEGORIES = [
   "All",
   "3D FDM Printing",
   "Resin Printing",
@@ -84,6 +86,43 @@ export const categories = [
   "Kit Party",
   "Agendas & Planners",
 ] as const;
+
+interface CosmosCategory {
+  id: string;
+  name: string;
+  partitionKey: "category";
+}
+
+async function fetchCategoriesFromCosmos(): Promise<string[]> {
+  try {
+    const container = await getContainer("categories");
+    const { resources } = await container.items
+      .query<CosmosCategory>(
+        "SELECT * FROM c WHERE c.partitionKey = 'category' ORDER BY c.name ASC",
+      )
+      .fetchAll();
+    if (resources.length === 0) return [...FALLBACK_CATEGORIES];
+    const names = resources.map((c) => c.name).filter(Boolean);
+    return ["All", ...names];
+  } catch (err) {
+    console.error("[data:fetchCategoriesFromCosmos] failed — using fallback:", err);
+    return [...FALLBACK_CATEGORIES];
+  }
+}
+
+const getCachedCategories = unstable_cache(
+  fetchCategoriesFromCosmos,
+  ["nss-categories-v1"],
+  { revalidate: 60, tags: ["categories"] },
+);
+
+export async function getCategories(): Promise<string[]> {
+  return getCachedCategories();
+}
+
+// Kept for any legacy server-side imports during migration. New code should
+// call getCategories().
+export const categories = FALLBACK_CATEGORIES;
 
 function slugify(name: string): string {
   return name

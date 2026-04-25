@@ -6,9 +6,15 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { ProductCard } from "@/components/product-card";
 import { FadeIn } from "@/components/motion-wrapper";
-import { categories, type Product } from "@/lib/data";
+import { type Product } from "@/lib/data";
 
-export default function ShopClient({ products }: { products: Product[] }) {
+export default function ShopClient({
+  products,
+  categories,
+}: {
+  products: Product[];
+  categories: string[];
+}) {
   const [activeCategory, setActiveCategory] = useState("All");
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState<"featured" | "price-asc" | "price-desc" | "rating">("featured");
