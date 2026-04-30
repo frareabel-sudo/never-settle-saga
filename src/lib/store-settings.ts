@@ -17,6 +17,9 @@ export interface ContactSettings {
     instagram: string;
     facebook: string;
     twitter: string;
+    tiktok: string;
+    youtube: string;
+    whatsapp: string;
   };
 }
 
@@ -36,7 +39,7 @@ export const DEFAULT_CONTACT_SETTINGS: ContactSettings = {
   address: "London, UK",
   email: "helpdesk@neversettlesaga.com",
   hours: "Mon–Fri, 9am–6pm GMT",
-  social: { instagram: "", facebook: "", twitter: "" },
+  social: { instagram: "", facebook: "", twitter: "", tiktok: "", youtube: "", whatsapp: "" },
 };
 
 export const DEFAULT_STORE_SETTINGS: StoreSettings = {

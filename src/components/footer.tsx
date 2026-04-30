@@ -1,6 +1,8 @@
 import Image from "next/image";
 import Link from "next/link";
-import { Globe, MessageCircle, Share2, Mail, MapPin } from "lucide-react";
+import { Mail, MapPin } from "lucide-react";
+import { getStoreSettings } from "@/lib/store-settings";
+import { buildSocials } from "@/components/social-icons";
 
 const footerLinks = {
   Shop: [
@@ -24,13 +26,9 @@ const footerLinks = {
   ],
 };
 
-const socials = [
-  { icon: Globe, href: "#", label: "Instagram" },
-  { icon: MessageCircle, href: "#", label: "Facebook" },
-  { icon: Share2, href: "#", label: "Twitter" },
-];
-
-export function Footer() {
+export async function Footer() {
+  const settings = await getStoreSettings();
+  const socials = buildSocials(settings.contact.social);
   return (
     <footer className="bg-charcoal-800 border-t border-charcoal-50/30">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
@@ -53,18 +51,22 @@ export function Footer() {
               Handmade in London. 3D printed creations, resin miniatures,
               craft kits, personalised planners, and lithophane lamps coming soon.
             </p>
-            <div className="flex gap-3">
-              {socials.map((s) => (
-                <a
-                  key={s.label}
-                  href={s.href}
-                  aria-label={s.label}
-                  className="w-9 h-9 rounded-full border border-charcoal-50 flex items-center justify-center text-gray-400 hover:text-amber-400 hover:border-amber-500/50 transition-colors"
-                >
-                  <s.icon className="w-4 h-4" />
-                </a>
-              ))}
-            </div>
+            {socials.length > 0 && (
+              <div className="flex gap-3">
+                {socials.map((s) => (
+                  <a
+                    key={s.label}
+                    href={s.href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label={s.label}
+                    className="w-9 h-9 rounded-full border border-charcoal-50 flex items-center justify-center text-gray-400 hover:text-amber-400 hover:border-amber-500/50 transition-colors"
+                  >
+                    <s.Icon className="w-4 h-4" />
+                  </a>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Link columns */}
