@@ -392,7 +392,10 @@ export async function getProductById(id: string): Promise<Product | null> {
   return all.find((p) => p.id === id) ?? null;
 }
 
-export const testimonials: Testimonial[] = [
+// Hardcoded fallback used when Cosmos is empty or unreachable. Real reviews
+// are operator-curated in CC → Website → Reviews and live in the `reviews`
+// container. See getReviews() below.
+const FALLBACK_TESTIMONIALS: Testimonial[] = [
   {
     id: "1",
     name: "Sarah M.",
@@ -434,6 +437,53 @@ export const testimonials: Testimonial[] = [
     product: "Resin Figurine",
   },
 ];
+
+// Legacy export kept for any direct imports during migration. New code should
+// call getReviews().
+export const testimonials: Testimonial[] = FALLBACK_TESTIMONIALS;
+
+interface CosmosReview {
+  id: string;
+  name: string;
+  location?: string;
+  text: string;
+  rating?: number;
+  product?: string;
+  published?: boolean;
+}
+
+async function fetchReviewsFromCosmos(): Promise<Testimonial[]> {
+  try {
+    const container = await getContainer("reviews");
+    const { resources } = await container.items
+      .query<CosmosReview>(
+        "SELECT * FROM c WHERE c.partitionKey = 'review' AND c.published = true ORDER BY c.date DESC",
+      )
+      .fetchAll();
+    if (resources.length === 0) return [...FALLBACK_TESTIMONIALS];
+    return resources.map((r) => ({
+      id: r.id,
+      name: r.name,
+      location: r.location ?? "",
+      text: r.text,
+      rating: typeof r.rating === "number" ? r.rating : 5,
+      product: r.product ?? "",
+    }));
+  } catch (err) {
+    console.error("[data:fetchReviewsFromCosmos] failed — using fallback:", err);
+    return [...FALLBACK_TESTIMONIALS];
+  }
+}
+
+const getCachedReviews = unstable_cache(
+  fetchReviewsFromCosmos,
+  ["nss-reviews-v1"],
+  { revalidate: 60, tags: ["reviews"] },
+);
+
+export async function getReviews(): Promise<Testimonial[]> {
+  return getCachedReviews();
+}
 
 export const blogPosts: BlogPost[] = [
   {

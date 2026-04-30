@@ -23,7 +23,8 @@ import { ProductCard } from "@/components/product-card";
 import { FadeIn, StaggerContainer, StaggerItem } from "@/components/motion-wrapper";
 import { ParticleField } from "@/components/particles";
 import { Marquee } from "@/components/marquee";
-import { testimonials, type Product } from "@/lib/data";
+import { type Product, type Testimonial } from "@/lib/data";
+import { TestimonialsCarousel } from "@/components/testimonials-carousel";
 
 const categoryCards = [
   {
@@ -64,7 +65,13 @@ const categoryCards = [
   },
 ];
 
-export default function HomeClient({ products }: { products: Product[] }) {
+export default function HomeClient({
+  products,
+  reviews,
+}: {
+  products: Product[];
+  reviews: Testimonial[];
+}) {
   const featuredProducts = products.slice(0, 4);
   const heroRef = useRef<HTMLDivElement>(null);
   const { scrollYProgress } = useScroll({
@@ -368,31 +375,12 @@ export default function HomeClient({ products }: { products: Product[] }) {
             </h2>
           </FadeIn>
 
-          <StaggerContainer className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {testimonials.slice(0, 3).map((t) => (
-              <StaggerItem key={t.id}>
-                <div className="p-6 rounded-xl bg-charcoal-800/40 border border-charcoal-50/10 h-full flex flex-col hover:border-amber-500/15 transition-colors duration-300">
-                  <div className="flex gap-1 mb-4">
-                    {[...Array(t.rating)].map((_, i) => (
-                      <Star
-                        key={i}
-                        className="w-4 h-4 fill-amber-500 text-amber-500"
-                      />
-                    ))}
-                  </div>
-                  <p className="text-gray-300 leading-relaxed flex-1 mb-4">
-                    &ldquo;{t.text}&rdquo;
-                  </p>
-                  <div className="pt-4 border-t border-charcoal-50/10">
-                    <p className="font-semibold text-sm">{t.name}</p>
-                    <p className="text-xs text-gray-600">
-                      {t.location} — {t.product}
-                    </p>
-                  </div>
-                </div>
-              </StaggerItem>
-            ))}
-          </StaggerContainer>
+          <TestimonialsCarousel reviews={reviews} />
+          {reviews.length > 1 && (
+            <p className="text-center text-xs text-gray-600 mt-6">
+              Showing {reviews.length} verified review{reviews.length === 1 ? "" : "s"}
+            </p>
+          )}
         </div>
       </section>
 
