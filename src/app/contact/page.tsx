@@ -1,12 +1,13 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Mail, MapPin, Clock, Globe, MessageCircle, Share2, Send } from "lucide-react";
+import { Mail, MapPin, Clock, Send } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { FadeIn } from "@/components/motion-wrapper";
 import { DEFAULT_CONTACT_SETTINGS, type ContactSettings } from "@/lib/store-settings";
+import { buildSocials } from "@/components/social-icons";
 
 export default function ContactPage() {
   const [submitted, setSubmitted] = useState(false);
@@ -19,11 +20,7 @@ export default function ContactPage() {
       .catch(() => {});
   }, []);
 
-  const socials = [
-    { Icon: Globe, label: "Instagram", href: contact.social.instagram },
-    { Icon: MessageCircle, label: "Facebook", href: contact.social.facebook },
-    { Icon: Share2, label: "Twitter", href: contact.social.twitter },
-  ].filter((s) => s.href && s.href.trim().length > 0);
+  const socials = buildSocials(contact.social);
 
   return (
     <>
