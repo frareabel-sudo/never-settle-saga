@@ -28,17 +28,23 @@ export function ProductCard({ product, index = 0 }: ProductCardProps) {
     >
       {/* Image */}
       <div className="relative aspect-square overflow-hidden">
-        <Image
-          src={product.images[0]}
-          alt={product.name}
-          fill
-          className={`object-cover group-hover:scale-105 transition-transform duration-700 ${isComingSoon ? "opacity-70" : ""}`}
-          sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-        />
-        <div className="absolute inset-0 bg-gradient-to-t from-charcoal-700/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+        <Link
+          href={`/shop/${product.slug}`}
+          aria-label={`View ${product.name}`}
+          className="absolute inset-0 z-10 block"
+        >
+          <Image
+            src={product.images[0]}
+            alt={product.name}
+            fill
+            className={`object-cover group-hover:scale-105 transition-transform duration-700 ${isComingSoon ? "opacity-70" : ""}`}
+            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+          />
+        </Link>
+        <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-charcoal-700/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-20" />
 
         {/* Status badge */}
-        <div className="absolute top-3 left-3 flex gap-2">
+        <div className="pointer-events-none absolute top-3 left-3 flex gap-2 z-30">
           {isComingSoon ? (
             <Badge variant="amber">Coming Soon</Badge>
           ) : (
@@ -50,7 +56,7 @@ export function ProductCard({ product, index = 0 }: ProductCardProps) {
         </div>
 
         {/* Quick actions overlay */}
-        <div className="absolute inset-x-0 bottom-0 p-4 translate-y-full group-hover:translate-y-0 transition-transform duration-300">
+        <div className="absolute inset-x-0 bottom-0 p-4 translate-y-full group-hover:translate-y-0 transition-transform duration-300 z-30">
           <div className="flex gap-2">
             {isComingSoon ? (
               <Button
