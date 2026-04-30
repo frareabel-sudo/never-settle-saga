@@ -4,7 +4,6 @@ import { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { AnimatePresence, motion } from "framer-motion";
-import { photosForVariant } from "@/lib/normalizePhotos";
 import { NssWatermark } from "@/components/nss-watermark";
 import {
   ArrowLeft,
@@ -13,6 +12,7 @@ import {
   Truck,
   Shield,
   RotateCcw,
+  ChevronLeft,
   ChevronRight,
   Minus,
   Plus,
@@ -77,29 +77,52 @@ export default function ProductClient({
   const displayPrice = selectedVariant?.price ?? product.price;
   const canAddToCart = !hasVariants || Boolean(selectedVariant);
 
-  // v3.32 — per-variant photo gallery. Tagged photos first, then masters, then Stripe
-  // fallback images. Empty → watermark placeholder.
-  const galleryImages = useMemo(() => {
-    const tagged = photosForVariant(product.photos ?? [], selectedVariant?.id);
-    const urls = tagged.map((p) => p.url);
-    if (urls.length > 0) return urls;
-    return product.images.length > 0 ? product.images : [];
-  }, [product.photos, product.images, selectedVariant?.id]);
-
-  // Preserve thumbnail index when the current image is still present in the new gallery;
-  // otherwise reset to 0. Guards against out-of-bounds when a variant has fewer photos.
-  useEffect(() => {
-    const currentUrl = galleryImages[selectedImage];
-    if (currentUrl == null) {
-      setSelectedImage(0);
-      return;
+  // Full gallery: every product photo (master + every variant), de-duplicated, sorted by order.
+  // Variant selection still drives the hero (via effect below) but the strip stays full.
+  const allImages = useMemo(() => {
+    const photos = product.photos ?? [];
+    if (photos.length > 0) {
+      const sorted = [...photos].sort((a, b) => a.order - b.order);
+      const seen = new Set<string>();
+      const urls: string[] = [];
+      for (const p of sorted) {
+        if (!seen.has(p.url)) {
+          seen.add(p.url);
+          urls.push(p.url);
+        }
+      }
+      return urls;
     }
-    const nextIndex = galleryImages.indexOf(currentUrl);
-    if (nextIndex !== selectedImage && nextIndex >= 0) setSelectedImage(nextIndex);
-    if (nextIndex === -1) setSelectedImage(0);
-  }, [galleryImages, selectedImage]);
+    return product.images.length > 0 ? product.images : [];
+  }, [product.photos, product.images]);
 
-  const heroUrl = galleryImages[selectedImage] ?? galleryImages[0];
+  // When variant changes, jump hero to that variant's first tagged photo.
+  useEffect(() => {
+    if (!selectedVariant?.id) return;
+    const photos = product.photos ?? [];
+    const firstTagged = photos
+      .filter((p) => p.variantIds.includes(selectedVariant.id))
+      .sort((a, b) => a.order - b.order)[0];
+    if (!firstTagged) return;
+    const idx = allImages.indexOf(firstTagged.url);
+    if (idx >= 0) setSelectedImage(idx);
+  }, [selectedVariant?.id, allImages, product.photos]);
+
+  // Bounds guard.
+  useEffect(() => {
+    if (selectedImage >= allImages.length) setSelectedImage(0);
+  }, [allImages, selectedImage]);
+
+  const heroUrl = allImages[selectedImage] ?? allImages[0];
+
+  const goPrev = () => {
+    if (allImages.length === 0) return;
+    setSelectedImage((i) => (i - 1 + allImages.length) % allImages.length);
+  };
+  const goNext = () => {
+    if (allImages.length === 0) return;
+    setSelectedImage((i) => (i + 1) % allImages.length);
+  };
 
   return (
     <>
@@ -167,10 +190,30 @@ export default function ProductClient({
                       </>
                     )}
                   </div>
+                  {allImages.length > 1 && (
+                    <>
+                      <button
+                        type="button"
+                        onClick={goPrev}
+                        aria-label="Previous image"
+                        className="absolute left-3 top-1/2 -translate-y-1/2 z-10 w-10 h-10 rounded-full bg-charcoal-500/70 hover:bg-charcoal-500 border border-charcoal-50/30 hover:border-amber-500/50 flex items-center justify-center text-charcoal-50 hover:text-amber-500 transition-all backdrop-blur-sm"
+                      >
+                        <ChevronLeft className="w-5 h-5" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={goNext}
+                        aria-label="Next image"
+                        className="absolute right-3 top-1/2 -translate-y-1/2 z-10 w-10 h-10 rounded-full bg-charcoal-500/70 hover:bg-charcoal-500 border border-charcoal-50/30 hover:border-amber-500/50 flex items-center justify-center text-charcoal-50 hover:text-amber-500 transition-all backdrop-blur-sm"
+                      >
+                        <ChevronRight className="w-5 h-5" />
+                      </button>
+                    </>
+                  )}
                 </div>
-                <div className="flex gap-3">
+                <div className="flex gap-3 flex-wrap">
                   <AnimatePresence mode="popLayout" initial={false}>
-                    {galleryImages.map((img, i) => (
+                    {allImages.map((img, i) => (
                       <motion.button
                         key={img}
                         layout
