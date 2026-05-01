@@ -19,10 +19,10 @@ const footerLinks = {
     { label: "Contact", href: "/contact" },
   ],
   Support: [
-    { label: "Shipping Info", href: "#" },
-    { label: "Returns Policy", href: "#" },
-    { label: "FAQ", href: "#" },
-    { label: "Privacy Policy", href: "#" },
+    { label: "Shipping Info", href: "/shipping" },
+    { label: "Returns Policy", href: "/returns" },
+    { label: "FAQ", href: "/faq" },
+    { label: "Privacy Policy", href: "/privacy" },
   ],
 };
 

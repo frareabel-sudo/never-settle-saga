@@ -117,7 +117,10 @@ function validateBody(raw: unknown):
 // Build Stripe shipping_options from Cosmos settings. Free shipping kicks in
 // when cart subtotal (pre-discount) hits `freeShippingThresholdGBP`, but only
 // for the rate id named in `freeShippingMethod`; other tiers keep their price
-// so the customer can still choose faster delivery.
+// so the customer can still choose faster delivery. Stripe Checkout cannot
+// filter shipping_options by selected country, so each rate's display_name
+// is prefixed with its region — combined with the shipping_address custom_text
+// disclaimer, this makes the choice unambiguous for the customer.
 async function buildShippingOptions(subtotalGBP: number) {
   const { shipping } = await getStoreSettings();
   const threshold = shipping.freeShippingThresholdGBP;
@@ -127,11 +130,13 @@ async function buildShippingOptions(subtotalGBP: number) {
     .map((r) => {
       const isFreeTier = qualifiesForFree && r.id === shipping.freeShippingMethod;
       const amount = isFreeTier ? 0 : Math.round(r.priceGBP * 100);
+      const regionTag = `[${r.region}]`;
+      const baseName = `${regionTag} ${r.label}`;
       return {
         shipping_rate_data: {
           type: "fixed_amount" as const,
           fixed_amount: { amount, currency: "gbp" },
-          display_name: isFreeTier ? `${r.label} — Free` : r.label,
+          display_name: isFreeTier ? `${baseName} — Free` : baseName,
           delivery_estimate: {
             minimum: { unit: "business_day" as const, value: r.etaMinDays },
             maximum: { unit: "business_day" as const, value: r.etaMaxDays },
@@ -140,6 +145,21 @@ async function buildShippingOptions(subtotalGBP: number) {
       };
     });
 }
+
+// UK + every EU member state. Customers outside this set are routed to email
+// per the contact-first policy in /shipping.
+const ALLOWED_SHIPPING_COUNTRIES = [
+  "GB",
+  "AT", "BE", "BG", "HR", "CY", "CZ", "DK", "EE", "FI", "FR",
+  "DE", "GR", "HU", "IE", "IT", "LV", "LT", "LU", "MT", "NL",
+  "PL", "PT", "RO", "SK", "SI", "ES", "SE",
+] as const;
+
+const SHIPPING_DISCLAIMER =
+  "We ship to the UK and EU only. Please pick the [UK] rate if your address is in the United Kingdom, or an [EU] rate for any EU member state — choosing the wrong region may delay your order. For destinations outside the UK and EU, please email helpdesk@neversettlesaga.com BEFORE placing your order so we can quote shipping for your country.";
+
+const SUBMIT_DISCLAIMER =
+  "Every NSS piece is made to order. After payment we will email you within 1–2 business days to confirm your specifications and a production timeline.";
 
 export async function POST(request: NextRequest) {
   try {
@@ -223,10 +243,14 @@ export async function POST(request: NextRequest) {
       customer_email: email,
       allow_promotion_codes: true,
       shipping_address_collection: {
-        allowed_countries: ["GB", "IE", "US", "CA", "AU", "NZ", "DE", "FR", "IT", "ES", "NL", "BE", "PT", "SE", "NO", "DK", "FI", "CH", "AT", "PL"],
+        allowed_countries: [...ALLOWED_SHIPPING_COUNTRIES],
       },
       shipping_options: await buildShippingOptions(subtotalGBP),
       phone_number_collection: { enabled: true },
+      custom_text: {
+        shipping_address: { message: SHIPPING_DISCLAIMER },
+        submit: { message: SUBMIT_DISCLAIMER },
+      },
       custom_fields: [
         {
           key: "notes",

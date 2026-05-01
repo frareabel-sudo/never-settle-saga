@@ -1,5 +1,7 @@
 import { getContainer } from "./cosmos";
 
+export type ShippingRegion = "UK" | "EU";
+
 export interface ShippingRate {
   id: string;
   label: string;
@@ -7,6 +9,7 @@ export interface ShippingRate {
   etaMinDays: number;
   etaMaxDays: number;
   enabled: boolean;
+  region: ShippingRegion;
 }
 
 export interface ContactSettings {
@@ -47,8 +50,10 @@ export const DEFAULT_STORE_SETTINGS: StoreSettings = {
   partitionKey: "setting",
   shipping: {
     rates: [
-      { id: "tracked48", label: "Royal Mail Tracked 48", priceGBP: 4.99, etaMinDays: 2, etaMaxDays: 3, enabled: true },
-      { id: "tracked24", label: "Royal Mail Tracked 24", priceGBP: 6.99, etaMinDays: 1, etaMaxDays: 2, enabled: true },
+      { id: "tracked48", label: "Royal Mail Tracked 48", priceGBP: 4.99, etaMinDays: 2, etaMaxDays: 3, enabled: true, region: "UK" },
+      { id: "tracked24", label: "Royal Mail Tracked 24", priceGBP: 6.99, etaMinDays: 1, etaMaxDays: 2, enabled: true, region: "UK" },
+      { id: "eu_standard", label: "EU Standard Tracked", priceGBP: 14.99, etaMinDays: 5, etaMaxDays: 10, enabled: true, region: "EU" },
+      { id: "eu_express", label: "EU Express Tracked", priceGBP: 24.99, etaMinDays: 3, etaMaxDays: 5, enabled: true, region: "EU" },
     ],
     freeShippingThresholdGBP: 0,
     freeShippingMethod: "tracked48",
@@ -102,10 +107,30 @@ export async function saveStoreSettings(next: Partial<StoreSettings>): Promise<S
 }
 
 function mergeWithDefaults(raw: StoreSettings): StoreSettings {
+  const rawRates = raw.shipping?.rates ?? [];
+  // Backfill region on legacy rates persisted before the UK/EU split (default: UK).
+  const ratesWithRegion: ShippingRate[] = rawRates.map((r) => ({
+    ...r,
+    region: r.region ?? "UK",
+  }));
+  // Ensure at least the default EU rates are available even if the persisted
+  // settings predate the UK/EU split. Operators can disable them via CC; they
+  // are only auto-injected when no EU rate exists at all.
+  const hasEuRate = ratesWithRegion.some((r) => r.region === "EU");
+  const finalRates = hasEuRate
+    ? ratesWithRegion
+    : [
+        ...ratesWithRegion,
+        ...DEFAULT_STORE_SETTINGS.shipping.rates.filter((r) => r.region === "EU"),
+      ];
   return {
     ...DEFAULT_STORE_SETTINGS,
     ...raw,
-    shipping: { ...DEFAULT_STORE_SETTINGS.shipping, ...(raw.shipping || {}) },
+    shipping: {
+      ...DEFAULT_STORE_SETTINGS.shipping,
+      ...(raw.shipping || {}),
+      rates: finalRates,
+    },
     contact: {
       ...DEFAULT_CONTACT_SETTINGS,
       ...(raw.contact || {}),
