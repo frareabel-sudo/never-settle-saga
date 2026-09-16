@@ -349,8 +349,17 @@ async function deductStockForLineItems(lineItems: Stripe.LineItem[]): Promise<nu
       }
 
       const product = matches[0];
+      // v3.34 — A promotion price is a separate Stripe price on the same product,
+      // so it never matches a variant's stripePriceId. Fall back to the variant id
+      // carried in the promo price metadata; without this a discounted variant sale
+      // would deduct from the product aggregate instead of the variant's own stock.
+      const promoVariantId = price.metadata?.promoVariantId || "";
       const variant = Array.isArray(product.variants)
-        ? product.variants.find((v: { stripePriceId?: string; id?: string }) => v.stripePriceId === stripePriceId)
+        ? product.variants.find(
+            (v: { stripePriceId?: string; id?: string }) =>
+              v.stripePriceId === stripePriceId ||
+              (promoVariantId !== "" && v.id === promoVariantId),
+          )
         : null;
 
       let writeOk = false;

@@ -30,6 +30,18 @@ export interface ProductVariant {
   stock?: number;                // v3.32 — canonical, sourced from Cosmos enrichment
 }
 
+// v3.34 — A quantity-break offer, resolved from a Stripe price tagged with
+// promoId metadata. The site never computes the discounted amount itself; it
+// only swaps to `stripePriceId` once `minQty` is met, so Stripe stays the sole
+// owner of every amount a customer can be charged.
+export interface ProductPromotion {
+  id: string;
+  minQty: number;
+  variantId: string;        // "" = applies to the product's base price
+  stripePriceId: string;
+  price: number;            // discounted unit price in pounds
+}
+
 export interface Product {
   id: string;
   stripePriceId: string;
@@ -51,6 +63,7 @@ export interface Product {
   status: ProductStatus;
   options?: ProductOption[];
   variants?: ProductVariant[];
+  promotions?: ProductPromotion[];      // v3.34 — quantity-break offers from Stripe
   photos?: ProductPhoto[];              // v3.32 — sourced from Cosmos via enrichFromCosmos
   publishToWebsite?: boolean;           // v3.32 — product-level site visibility
 }
@@ -163,18 +176,42 @@ async function buildVariantsFromPrices(
   stripe: ReturnType<typeof getStripe>,
   productId: string,
   defaultPriceId: string,
-): Promise<{ options?: ProductOption[]; variants?: ProductVariant[] }> {
+): Promise<{
+  options?: ProductOption[];
+  variants?: ProductVariant[];
+  promotions?: ProductPromotion[];
+}> {
   const prices = await stripe.prices.list({
     product: productId,
     active: true,
     limit: 100,
   });
 
+  // v3.34 — Promotion prices live on the same product, tagged with promoId.
+  // They are never variants and never the default price; they exist only so
+  // checkout can swap to them once the quantity threshold is met.
+  const promotions: ProductPromotion[] = [];
+  for (const price of prices.data) {
+    const meta = price.metadata ?? {};
+    if (!meta.promoId || price.unit_amount == null) continue;
+    const minQty = Number(meta.promoMinQty);
+    if (!Number.isFinite(minQty) || minQty < 2) continue;
+    promotions.push({
+      id: meta.promoId,
+      minQty,
+      variantId: meta.promoVariantId || "",
+      stripePriceId: price.id,
+      price: price.unit_amount / 100,
+    });
+  }
+
   // Only treat as variants if at least one price has an option_ metadata key.
   const variantPrices = prices.data.filter((p) =>
     Object.keys(p.metadata ?? {}).some((k) => k.startsWith("opt_"))
   );
-  if (variantPrices.length === 0) return {};
+  if (variantPrices.length === 0) {
+    return promotions.length > 0 ? { promotions } : {};
+  }
 
   const optionMap = new Map<string, Set<string>>();
   const variants: ProductVariant[] = [];
@@ -206,7 +243,7 @@ async function buildVariantsFromPrices(
     values: Array.from(values),
   }));
 
-  return { options, variants };
+  return { options, variants, promotions: promotions.length > 0 ? promotions : undefined };
 }
 
 interface CosmosVariant {
@@ -317,7 +354,7 @@ async function fetchProductsFromStripe(): Promise<Product[]> {
         ? Number(originalPriceRaw)
         : undefined;
 
-    const { options, variants } = await buildVariantsFromPrices(
+    const { options, variants, promotions } = await buildVariantsFromPrices(
       stripe,
       sp.id,
       defaultPrice.id,
@@ -346,6 +383,7 @@ async function fetchProductsFromStripe(): Promise<Product[]> {
       status: meta.status === "coming-soon" ? "coming-soon" : "available",
       options,
       variants,
+      promotions,
     });
   }
 

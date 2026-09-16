@@ -215,7 +215,22 @@ export async function POST(request: NextRequest) {
         priceId = variant.stripePriceId;
         unitPrice = variant.price;
       }
-      lineItems.push({ price: priceId, quantity: item.quantity });
+      // v3.34 — Quantity-break promotions. The operator defines the rule in
+      // Command Centre, which materialises it as an extra Stripe price. No
+      // arithmetic happens here: we only select the promo price when the
+      // quantity qualifies, so Stripe stays the sole owner of unit amounts.
+      // Deepest qualifying tier wins (highest minQty at or below the quantity).
+      const promo = (product.promotions ?? [])
+        .filter((p) => p.variantId === (item.variantId ?? "") && item.quantity >= p.minQty)
+        .sort((a, b) => b.minQty - a.minQty)[0];
+
+      // The Stripe line carries the discounted price, but stock stays keyed to
+      // the ORIGINAL price id — findInsufficientStock resolves the Cosmos
+      // product/variant through it, and a promo price id matches neither.
+      const checkoutPriceId = promo ? promo.stripePriceId : priceId;
+      if (promo) unitPrice = promo.price;
+
+      lineItems.push({ price: checkoutPriceId, quantity: item.quantity });
       stockCheckItems.push({ stripePriceId: priceId, quantity: item.quantity, productId: item.productId, variantId: item.variantId });
       subtotalGBP += unitPrice * item.quantity;
     }

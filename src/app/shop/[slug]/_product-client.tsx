@@ -77,6 +77,15 @@ export default function ProductClient({
   const displayPrice = selectedVariant?.price ?? product.price;
   const canAddToCart = !hasVariants || Boolean(selectedVariant);
 
+  // v3.34 — Promotions that apply to what the shopper currently has selected.
+  // Variant products key promos by variant id; simple products use "".
+  const activePromotions = useMemo(() => {
+    const key = selectedVariant?.id ?? "";
+    return (product.promotions ?? [])
+      .filter((p) => p.variantId === key)
+      .sort((a, b) => a.minQty - b.minQty);
+  }, [product.promotions, selectedVariant?.id]);
+
   // Full gallery: every product photo (master + every variant), de-duplicated, sorted by order.
   // Variant selection still drives the hero (via effect below) but the strip stays full.
   const allImages = useMemo(() => {
@@ -278,6 +287,32 @@ export default function ProductClient({
                     </span>
                   )}
                 </div>
+
+                {/* v3.34 — Quantity-break offers for the selected variant. */}
+                {activePromotions.length > 0 && !isComingSoon && (
+                  <div className="mb-6 rounded-lg border border-amber-500/20 bg-amber-500/5 px-4 py-3">
+                    <p className="text-xs uppercase tracking-wider text-amber-400/80 mb-1.5">
+                      Buy more, pay less
+                    </p>
+                    <ul className="space-y-1">
+                      {activePromotions.map((p) => (
+                        <li key={p.id} className="text-sm text-gray-300">
+                          <span className="text-amber-300 font-semibold">{p.minQty}+</span>{" "}
+                          — {formatPrice(p.price)} each
+                          {displayPrice > p.price && (
+                            <span className="text-gray-500">
+                              {" "}
+                              (save {Math.round(((displayPrice - p.price) / displayPrice) * 100)}%)
+                            </span>
+                          )}
+                        </li>
+                      ))}
+                    </ul>
+                    <p className="mt-1.5 text-[11px] text-gray-500">
+                      Discount applied automatically at checkout.
+                    </p>
+                  </div>
+                )}
 
                 <p className="text-gray-300 leading-relaxed mb-8">
                   {product.longDescription}
