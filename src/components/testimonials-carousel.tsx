@@ -45,22 +45,22 @@ export function TestimonialsCarousel({ reviews, autoRotateMs = 6000 }: Props) {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -12 }}
             transition={{ duration: 0.4, ease: "easeOut" }}
-            className="w-full p-8 md:p-10 rounded-2xl bg-charcoal-800/40 border border-charcoal-50/10 hover:border-amber-500/15 transition-colors"
+            className="w-full p-8 md:p-10 rounded-2xl bg-surface-alt/40 border border-surface-line/10 hover:border-brand-500/15 transition-colors"
           >
             <div className="flex gap-1 mb-5 justify-center">
               {Array.from({ length: 5 }).map((_, i) => (
                 <Star
                   key={i}
-                  className={`w-5 h-5 ${i < current.rating ? "fill-amber-500 text-amber-500" : "text-charcoal-50/20"}`}
+                  className={`w-5 h-5 ${i < current.rating ? "fill-brand-500 text-brand-500" : "text-white/20"}`}
                 />
               ))}
             </div>
-            <p className="text-lg md:text-xl text-gray-200 leading-relaxed text-center font-light italic mb-6">
+            <p className="text-lg md:text-xl text-ink leading-relaxed text-center font-light italic mb-6">
               &ldquo;{current.text}&rdquo;
             </p>
             <div className="text-center">
               <p className="font-semibold text-base">{current.name}</p>
-              <p className="text-xs text-gray-600 mt-0.5">
+              <p className="text-xs text-ink-soft mt-0.5">
                 {current.location}
                 {current.location && current.product ? " — " : ""}
                 {current.product}
@@ -76,7 +76,7 @@ export function TestimonialsCarousel({ reviews, autoRotateMs = 6000 }: Props) {
             type="button"
             onClick={goPrev}
             aria-label="Previous review"
-            className="absolute left-0 md:-left-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-charcoal-900/80 hover:bg-charcoal-800 border border-charcoal-50/15 hover:border-amber-500/40 flex items-center justify-center text-gray-300 hover:text-amber-500 transition-all backdrop-blur-sm"
+            className="absolute left-0 md:-left-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-surface/80 hover:bg-surface-alt border border-surface-line/15 hover:border-brand-500/40 flex items-center justify-center text-ink-muted hover:text-brand-500 transition-all backdrop-blur-sm"
           >
             <ChevronLeft className="w-5 h-5" />
           </button>
@@ -84,7 +84,7 @@ export function TestimonialsCarousel({ reviews, autoRotateMs = 6000 }: Props) {
             type="button"
             onClick={goNext}
             aria-label="Next review"
-            className="absolute right-0 md:-right-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-charcoal-900/80 hover:bg-charcoal-800 border border-charcoal-50/15 hover:border-amber-500/40 flex items-center justify-center text-gray-300 hover:text-amber-500 transition-all backdrop-blur-sm"
+            className="absolute right-0 md:-right-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-surface/80 hover:bg-surface-alt border border-surface-line/15 hover:border-brand-500/40 flex items-center justify-center text-ink-muted hover:text-brand-500 transition-all backdrop-blur-sm"
           >
             <ChevronRight className="w-5 h-5" />
           </button>
@@ -97,7 +97,7 @@ export function TestimonialsCarousel({ reviews, autoRotateMs = 6000 }: Props) {
                 onClick={() => setIndex(i)}
                 aria-label={`Show review ${i + 1}`}
                 className={`h-1.5 rounded-full transition-all ${
-                  i === index ? "bg-amber-500 w-8" : "bg-charcoal-50/20 hover:bg-charcoal-50/40 w-1.5"
+                  i === index ? "bg-brand-500 w-8" : "bg-surface-line/20 hover:bg-surface-line/40 w-1.5"
                 }`}
               />
             ))}

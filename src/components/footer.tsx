@@ -30,7 +30,7 @@ export async function Footer() {
   const settings = await getStoreSettings();
   const socials = buildSocials(settings.contact.social);
   return (
-    <footer className="bg-charcoal-800 border-t border-charcoal-50/30">
+    <footer className="bg-surface-dark border-t border-surface-line/10">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-10">
           {/* Brand */}
@@ -43,11 +43,11 @@ export async function Footer() {
                 height={40}
                 className="rounded"
               />
-              <span className="font-display text-lg font-bold">
-                Never Settle <span className="text-amber-400">Saga</span>
+              <span className="font-display text-lg font-bold text-ink-inverse">
+                Never Settle <span className="text-brand-300">Saga</span>
               </span>
             </Link>
-            <p className="text-gray-400 text-sm leading-relaxed mb-6 max-w-sm">
+            <p className="text-ink-inverse/70 text-sm leading-relaxed mb-6 max-w-sm">
               Handmade in London. 3D printed creations, resin miniatures,
               craft kits, personalised planners, and lithophane lamps coming soon.
             </p>
@@ -60,7 +60,7 @@ export async function Footer() {
                     target="_blank"
                     rel="noopener noreferrer"
                     aria-label={s.label}
-                    className="w-9 h-9 rounded-full border border-charcoal-50 flex items-center justify-center text-gray-400 hover:text-amber-400 hover:border-amber-500/50 transition-colors"
+                    className="w-9 h-9 rounded-full border border-ink-inverse/25 flex items-center justify-center text-ink-inverse/70 hover:text-brand-300 hover:border-brand-300/60 transition-colors"
                   >
                     <s.Icon className="w-4 h-4" />
                   </a>
@@ -72,7 +72,7 @@ export async function Footer() {
           {/* Link columns */}
           {Object.entries(footerLinks).map(([title, links]) => (
             <div key={title}>
-              <h4 className="font-display font-semibold text-sm uppercase tracking-wider text-amber-400/80 mb-4">
+              <h4 className="font-display font-semibold text-sm uppercase tracking-wider text-brand-300/90 mb-4">
                 {title}
               </h4>
               <ul className="space-y-2.5">
@@ -80,7 +80,7 @@ export async function Footer() {
                   <li key={link.label}>
                     <Link
                       href={link.href}
-                      className="text-sm text-gray-400 hover:text-amber-300 transition-colors"
+                      className="text-sm text-ink-inverse/70 hover:text-brand-300 transition-colors"
                     >
                       {link.label}
                     </Link>
@@ -92,8 +92,8 @@ export async function Footer() {
         </div>
 
         {/* Contact row */}
-        <div className="mt-12 pt-8 border-t border-charcoal-50/20 flex flex-col md:flex-row items-center justify-between gap-4">
-          <div className="flex flex-wrap items-center gap-6 text-sm text-gray-500">
+        <div className="mt-12 pt-8 border-t border-ink-inverse/15 flex flex-col md:flex-row items-center justify-between gap-4">
+          <div className="flex flex-wrap items-center gap-6 text-sm text-ink-inverse/60">
             <span className="flex items-center gap-1.5">
               <MapPin className="w-3.5 h-3.5" /> London, UK
             </span>
@@ -101,7 +101,7 @@ export async function Footer() {
               <Mail className="w-3.5 h-3.5" /> helpdesk@neversettlesaga.com
             </span>
           </div>
-          <p className="text-sm text-gray-600">
+          <p className="text-sm text-ink-inverse/60">
             &copy; {new Date().getFullYear()} Never Settle Saga. Made with love by Abel &amp; Jennifer in London
           </p>
         </div>

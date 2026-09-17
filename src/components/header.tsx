@@ -32,7 +32,7 @@ export function Header() {
       <header
         className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${
           scrolled
-            ? "bg-charcoal-900/95 backdrop-blur-xl border-b border-amber-500/10 shadow-lg shadow-black/20"
+            ? "bg-surface/95 backdrop-blur-xl border-b border-brand-500/10 shadow-lg shadow-ink/20"
             : "bg-transparent border-b border-transparent"
         }`}
       >
@@ -45,10 +45,10 @@ export function Header() {
                 alt="Never Settle Saga"
                 width={44}
                 height={44}
-                className="rounded-lg group-hover:shadow-lg group-hover:shadow-amber-500/30 transition-all duration-300"
+                className="rounded-lg group-hover:shadow-lg group-hover:shadow-brand-500/30 transition-all duration-300"
               />
               <div className="hidden sm:flex flex-col leading-none">
-                <span className="font-display text-[11px] font-bold tracking-[0.25em] uppercase text-amber-400/90">
+                <span className="font-display text-[11px] font-bold tracking-[0.25em] uppercase text-brand-600">
                   Never Settle
                 </span>
                 <span className="font-display text-lg font-bold tracking-tight text-foreground -mt-0.5">
@@ -63,10 +63,10 @@ export function Header() {
                 <Link
                   key={link.href}
                   href={link.href}
-                  className="relative px-4 py-2 text-sm text-gray-400 hover:text-amber-300 transition-colors duration-300 group"
+                  className="relative px-4 py-2 text-sm text-ink-muted hover:text-brand-600 transition-colors duration-300 group"
                 >
                   {link.label}
-                  <span className="absolute bottom-0 left-1/2 -translate-x-1/2 h-[2px] w-0 bg-gradient-to-r from-amber-500/0 via-amber-400 to-amber-500/0 group-hover:w-4/5 transition-all duration-400 ease-out" />
+                  <span className="absolute bottom-0 left-1/2 -translate-x-1/2 h-[2px] w-0 bg-gradient-to-r from-brand-500/0 via-brand-500 to-brand-500/0 group-hover:w-4/5 transition-all duration-400 ease-out" />
                 </Link>
               ))}
             </nav>
@@ -75,7 +75,7 @@ export function Header() {
             <div className="flex items-center gap-2">
               <Link
                 href="/cart"
-                className="relative p-2.5 rounded-full text-gray-400 hover:text-amber-300 hover:bg-amber-500/10 transition-all duration-300"
+                className="relative p-2.5 rounded-full text-ink-muted hover:text-brand-600 hover:bg-brand-500/10 transition-all duration-300"
                 aria-label="Shopping bag"
               >
                 <ShoppingBag className="w-5 h-5" />
@@ -83,14 +83,14 @@ export function Header() {
                   <motion.span
                     initial={{ scale: 0 }}
                     animate={{ scale: 1 }}
-                    className="absolute -top-0.5 -right-0.5 w-5 h-5 bg-amber-500 text-charcoal-900 text-[10px] font-bold rounded-full flex items-center justify-center shadow-lg shadow-amber-500/30"
+                    className="absolute -top-0.5 -right-0.5 w-5 h-5 bg-brand-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center shadow-lg shadow-brand-500/30"
                   >
                     {count}
                   </motion.span>
                 )}
               </Link>
               <button
-                className="lg:hidden p-2.5 rounded-full text-gray-400 hover:text-amber-300 hover:bg-amber-500/10 transition-all duration-300"
+                className="lg:hidden p-2.5 rounded-full text-ink-muted hover:text-brand-600 hover:bg-brand-500/10 transition-all duration-300"
                 onClick={() => setMobileOpen(true)}
                 aria-label="Open menu"
               >
@@ -109,12 +109,12 @@ export function Header() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.3 }}
-            className="fixed inset-0 z-[100] bg-charcoal-900/98 backdrop-blur-2xl lg:hidden"
+            className="fixed inset-0 z-[100] bg-surface/98 backdrop-blur-2xl lg:hidden"
           >
             {/* Close button */}
             <div className="absolute top-4 right-4">
               <button
-                className="p-3 rounded-full text-gray-400 hover:text-amber-300 hover:bg-amber-500/10 transition-colors"
+                className="p-3 rounded-full text-ink-muted hover:text-brand-600 hover:bg-brand-500/10 transition-colors"
                 onClick={() => setMobileOpen(false)}
                 aria-label="Close menu"
               >
@@ -136,7 +136,7 @@ export function Header() {
                   alt="Never Settle Saga"
                   width={64}
                   height={64}
-                  className="rounded-xl shadow-lg shadow-amber-500/20"
+                  className="rounded-xl shadow-lg shadow-brand-500/20"
                 />
               </motion.div>
 
@@ -152,7 +152,7 @@ export function Header() {
                     <Link
                       href={link.href}
                       onClick={() => setMobileOpen(false)}
-                      className="block px-8 py-3 text-2xl font-display font-semibold text-gray-300 hover:text-amber-300 transition-colors text-center"
+                      className="block px-8 py-3 text-2xl font-display font-semibold text-ink-muted hover:text-brand-600 transition-colors text-center"
                     >
                       {link.label}
                     </Link>
@@ -165,7 +165,7 @@ export function Header() {
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ delay: 0.5 }}
-                className="absolute bottom-8 text-xs text-gray-600 tracking-widest uppercase"
+                className="absolute bottom-8 text-xs text-ink-soft tracking-widest uppercase"
               >
                 Handmade in London
               </motion.p>

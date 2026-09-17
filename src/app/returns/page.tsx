@@ -49,7 +49,7 @@ export default function ReturnsPage() {
       </PolicyList>
       <p>
         In any of these cases, contact us at{" "}
-        <a href="mailto:helpdesk@neversettlesaga.com" className="text-amber-400 hover:text-amber-300 underline">
+        <a href="mailto:helpdesk@neversettlesaga.com" className="text-brand-500 hover:text-brand-600 underline">
           helpdesk@neversettlesaga.com
         </a>{" "}
         within 30 days of receiving your order, with:
@@ -90,18 +90,18 @@ export default function ReturnsPage() {
 
       <PolicyH2>Contact</PolicyH2>
       <p className="not-italic">
-        <strong className="text-white">Never Settle Saga</strong>
+        <strong className="text-ink">Never Settle Saga</strong>
         <br />
         262a Seven Sisters Road, London N4 2HY, United Kingdom
         <br />
-        <a href="mailto:helpdesk@neversettlesaga.com" className="text-amber-400 hover:text-amber-300 underline">
+        <a href="mailto:helpdesk@neversettlesaga.com" className="text-brand-500 hover:text-brand-600 underline">
           helpdesk@neversettlesaga.com
         </a>
       </p>
 
       <p className="pt-6 text-sm">
-        See also: <Link href="/shipping" className="text-amber-400 hover:text-amber-300 underline">Shipping Info</Link>{" · "}
-        <Link href="/faq" className="text-amber-400 hover:text-amber-300 underline">FAQ</Link>
+        See also: <Link href="/shipping" className="text-brand-500 hover:text-brand-600 underline">Shipping Info</Link>{" · "}
+        <Link href="/faq" className="text-brand-500 hover:text-brand-600 underline">FAQ</Link>
       </p>
     </PolicyLayout>
   );

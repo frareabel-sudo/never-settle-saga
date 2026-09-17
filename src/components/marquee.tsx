@@ -16,7 +16,7 @@ const text = items.join(separator) + separator;
 
 export function Marquee() {
   return (
-    <div className="relative overflow-hidden bg-charcoal-900 border-y border-amber-500/10 py-3">
+    <div className="relative overflow-hidden bg-surface border-y border-brand-500/10 py-3">
       <div className="flex whitespace-nowrap">
         <motion.div
           className="flex shrink-0"
@@ -33,7 +33,7 @@ export function Marquee() {
           {[...Array(6)].map((_, i) => (
             <span
               key={i}
-              className="text-sm font-medium tracking-[0.2em] text-amber-500/70 mx-0"
+              className="text-sm font-medium tracking-[0.2em] text-brand-600 mx-0"
             >
               {text}
             </span>

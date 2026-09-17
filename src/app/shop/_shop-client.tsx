@@ -56,13 +56,13 @@ export default function ShopClient({
   return (
     <>
       {/* Header */}
-      <section className="pt-24 lg:pt-28 pb-8 bg-charcoal-900">
+      <section className="pt-24 lg:pt-28 pb-8 bg-surface">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <FadeIn>
             <h1 className="font-display text-4xl sm:text-5xl font-bold mb-4">
               The <span className="text-gradient">Collection</span>
             </h1>
-            <p className="text-gray-400 text-lg max-w-2xl">
+            <p className="text-ink-muted text-lg max-w-2xl">
               Every piece handcrafted in our London workshop. Browse our full range of
               lithophane lamps, engraved gifts, and 3D printed creations.
             </p>
@@ -71,7 +71,7 @@ export default function ShopClient({
       </section>
 
       {/* Filters */}
-      <section className="sticky top-16 lg:top-20 z-30 bg-charcoal-600/95 backdrop-blur-md border-b border-charcoal-50/30">
+      <section className="sticky top-16 lg:top-20 z-30 bg-surface-strip/95 backdrop-blur-md border-b border-surface-line/30">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
             {/* Category tabs */}
@@ -82,8 +82,8 @@ export default function ShopClient({
                   onClick={() => setActiveCategory(cat)}
                   className={`px-4 py-2 text-sm rounded-full whitespace-nowrap transition-all ${
                     activeCategory === cat
-                      ? "bg-amber-500 text-charcoal-900 font-medium"
-                      : "bg-charcoal-300/50 text-gray-400 hover:text-foreground hover:bg-charcoal-300"
+                      ? "bg-brand-500 text-white font-medium"
+                      : "bg-surface-card/50 text-ink-muted hover:text-foreground hover:bg-surface-card"
                   }`}
                 >
                   {cat}
@@ -94,7 +94,7 @@ export default function ShopClient({
             <div className="flex gap-3 w-full sm:w-auto">
               {/* Search */}
               <div className="relative flex-1 sm:w-56">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-ink-soft" />
                 <Input
                   placeholder="Search products..."
                   value={searchQuery}
@@ -107,7 +107,7 @@ export default function ShopClient({
               <select
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value as typeof sortBy)}
-                className="h-10 px-3 rounded border border-charcoal-50 bg-charcoal-200 text-sm text-foreground focus:border-amber-500/50 focus:outline-none"
+                className="h-10 px-3 rounded border border-surface-line bg-surface-card text-sm text-foreground focus:border-brand-500/50 focus:outline-none"
               >
                 <option value="featured">Featured</option>
                 <option value="price-asc">Price: Low to High</option>
@@ -120,9 +120,9 @@ export default function ShopClient({
       </section>
 
       {/* Products Grid */}
-      <section className="py-12 bg-charcoal-900 min-h-[60vh]">
+      <section className="py-12 bg-surface min-h-[60vh]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <p className="text-sm text-gray-500 mb-6">
+          <p className="text-sm text-ink-soft mb-6">
             {filtered.length} product{filtered.length !== 1 && "s"}
           </p>
 
@@ -134,8 +134,8 @@ export default function ShopClient({
             </div>
           ) : (
             <div className="text-center py-20">
-              <p className="text-gray-400 text-lg mb-2">No products yet</p>
-              <p className="text-gray-500 text-sm mb-6 max-w-md mx-auto">
+              <p className="text-ink-muted text-lg mb-2">No products yet</p>
+              <p className="text-ink-soft text-sm mb-6 max-w-md mx-auto">
                 We&apos;re busy crafting our collection. Check back soon or get in touch to discuss a custom order.
               </p>
               <div className="flex gap-3 justify-center">

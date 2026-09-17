@@ -24,7 +24,7 @@ export function ProductCard({ product, index = 0 }: ProductCardProps) {
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true }}
       transition={{ duration: 0.5, delay: index * 0.1 }}
-      className="group relative bg-charcoal-300 rounded-lg overflow-hidden border border-charcoal-50/30 hover:border-amber-500/30 transition-all duration-500"
+      className="group relative bg-surface-card rounded-lg overflow-hidden border border-surface-line/30 hover:border-brand-500/30 transition-all duration-500"
     >
       {/* Image */}
       <div className="relative aspect-square overflow-hidden">
@@ -41,7 +41,7 @@ export function ProductCard({ product, index = 0 }: ProductCardProps) {
             sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
           />
         </Link>
-        <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-charcoal-700/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-20" />
+        <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-surface/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-20" />
 
         {/* Status badge */}
         <div className="pointer-events-none absolute top-3 left-3 flex gap-2 z-30">
@@ -62,7 +62,7 @@ export function ProductCard({ product, index = 0 }: ProductCardProps) {
               <Button
                 size="sm"
                 variant="outline"
-                className="flex-1 gap-2 bg-charcoal-700/80 backdrop-blur-sm border-amber-500/40 text-amber-300"
+                className="flex-1 gap-2 bg-surface-alt/80 backdrop-blur-sm border-brand-500/40 text-brand-600"
                 onClick={(e) => {
                   e.preventDefault();
                   const email = prompt("Enter your email to be notified when this launches:");
@@ -105,30 +105,30 @@ export function ProductCard({ product, index = 0 }: ProductCardProps) {
 
       {/* Info */}
       <div className="p-4">
-        <p className="text-xs text-amber-500/70 uppercase tracking-wider mb-1">
+        <p className="text-xs text-brand-600 uppercase tracking-wider mb-1">
           {product.category}
         </p>
         <Link href={`/shop/${product.slug}`}>
-          <h3 className="font-display font-semibold text-foreground group-hover:text-amber-300 transition-colors line-clamp-1">
+          <h3 className="font-display font-semibold text-foreground group-hover:text-brand-600 transition-colors line-clamp-1">
             {product.name}
           </h3>
         </Link>
-        <p className="text-sm text-gray-400 mt-1 line-clamp-2">
+        <p className="text-sm text-ink-muted mt-1 line-clamp-2">
           {product.description}
         </p>
         <div className="flex items-center justify-between mt-3">
           <div className="flex items-center gap-2">
             {isComingSoon ? (
-              <span className="font-display font-bold text-amber-400/60 text-lg">
+              <span className="font-display font-bold text-brand-600 text-lg">
                 {formatPrice(product.price)}
               </span>
             ) : (
               <>
-                <span className="font-display font-bold text-amber-400 text-lg">
+                <span className="font-display font-bold text-brand-500 text-lg">
                   {formatPrice(product.price)}
                 </span>
                 {product.originalPrice && (
-                  <span className="text-sm text-gray-500 line-through">
+                  <span className="text-sm text-ink-soft line-through">
                     {formatPrice(product.originalPrice)}
                   </span>
                 )}
@@ -136,8 +136,8 @@ export function ProductCard({ product, index = 0 }: ProductCardProps) {
             )}
           </div>
           {product.reviews > 0 && (
-            <div className="flex items-center gap-1 text-xs text-gray-400">
-              <Star className="w-3.5 h-3.5 fill-amber-500 text-amber-500" />
+            <div className="flex items-center gap-1 text-xs text-ink-muted">
+              <Star className="w-3.5 h-3.5 fill-brand-500 text-brand-500" />
               <span>{product.rating}</span>
               <span>({product.reviews})</span>
             </div>

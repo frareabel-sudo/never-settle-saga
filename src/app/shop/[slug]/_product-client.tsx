@@ -136,14 +136,14 @@ export default function ProductClient({
   return (
     <>
       {/* Breadcrumb */}
-      <div className="bg-charcoal-600 border-b border-charcoal-50/20">
+      <div className="bg-surface-strip border-b border-surface-line/20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
-          <div className="flex items-center gap-2 text-sm text-gray-500">
-            <Link href="/shop" className="hover:text-amber-400 transition-colors flex items-center gap-1">
+          <div className="flex items-center gap-2 text-sm text-ink-soft">
+            <Link href="/shop" className="hover:text-brand-500 transition-colors flex items-center gap-1">
               <ArrowLeft className="w-3.5 h-3.5" /> Shop
             </Link>
             <ChevronRight className="w-3.5 h-3.5" />
-            <span className="text-gray-400">{product.category}</span>
+            <span className="text-ink-muted">{product.category}</span>
             <ChevronRight className="w-3.5 h-3.5" />
             <span className="text-foreground">{product.name}</span>
           </div>
@@ -151,13 +151,13 @@ export default function ProductClient({
       </div>
 
       {/* Product */}
-      <section className="py-12 bg-charcoal-700">
+      <section className="py-12 bg-surface-alt">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
             {/* Gallery */}
             <FadeIn direction="left">
               <div>
-                <div className="relative aspect-square rounded-lg overflow-hidden bg-charcoal-400 border border-charcoal-50/30 mb-4">
+                <div className="relative aspect-square rounded-lg overflow-hidden bg-surface-card border border-surface-line/30 mb-4">
                   <AnimatePresence mode="sync" initial={false}>
                     {heroUrl ? (
                       <motion.div
@@ -205,7 +205,7 @@ export default function ProductClient({
                         type="button"
                         onClick={goPrev}
                         aria-label="Previous image"
-                        className="absolute left-3 top-1/2 -translate-y-1/2 z-10 w-10 h-10 rounded-full bg-charcoal-500/70 hover:bg-charcoal-500 border border-charcoal-50/30 hover:border-amber-500/50 flex items-center justify-center text-charcoal-50 hover:text-amber-500 transition-all backdrop-blur-sm"
+                        className="absolute left-3 top-1/2 -translate-y-1/2 z-10 w-10 h-10 rounded-full bg-surface-strip/70 hover:bg-surface-strip border border-surface-line/30 hover:border-brand-500/50 flex items-center justify-center text-white hover:text-brand-500 transition-all backdrop-blur-sm"
                       >
                         <ChevronLeft className="w-5 h-5" />
                       </button>
@@ -213,7 +213,7 @@ export default function ProductClient({
                         type="button"
                         onClick={goNext}
                         aria-label="Next image"
-                        className="absolute right-3 top-1/2 -translate-y-1/2 z-10 w-10 h-10 rounded-full bg-charcoal-500/70 hover:bg-charcoal-500 border border-charcoal-50/30 hover:border-amber-500/50 flex items-center justify-center text-charcoal-50 hover:text-amber-500 transition-all backdrop-blur-sm"
+                        className="absolute right-3 top-1/2 -translate-y-1/2 z-10 w-10 h-10 rounded-full bg-surface-strip/70 hover:bg-surface-strip border border-surface-line/30 hover:border-brand-500/50 flex items-center justify-center text-white hover:text-brand-500 transition-all backdrop-blur-sm"
                       >
                         <ChevronRight className="w-5 h-5" />
                       </button>
@@ -233,8 +233,8 @@ export default function ProductClient({
                         onClick={() => setSelectedImage(i)}
                         className={`relative w-20 h-20 rounded-lg overflow-hidden border-2 transition-all ${
                           selectedImage === i
-                            ? "border-amber-500 shadow-lg shadow-amber-500/20"
-                            : "border-charcoal-50/30 hover:border-amber-500/50"
+                            ? "border-brand-500 shadow-lg shadow-brand-500/20"
+                            : "border-surface-line/30 hover:border-brand-500/50"
                         }`}
                       >
                         <Image src={img} alt="" fill className="object-cover" />
@@ -248,7 +248,7 @@ export default function ProductClient({
             {/* Details */}
             <FadeIn direction="right">
               <div>
-                <p className="text-amber-500/70 text-sm uppercase tracking-wider mb-2">
+                <p className="text-brand-600 text-sm uppercase tracking-wider mb-2">
                   {product.category}
                 </p>
                 <h1 className="font-display text-3xl sm:text-4xl font-bold mb-4">
@@ -264,13 +264,13 @@ export default function ProductClient({
                           key={i}
                           className={`w-4 h-4 ${
                             i < Math.floor(product.rating)
-                              ? "fill-amber-500 text-amber-500"
-                              : "text-gray-600"
+                              ? "fill-brand-500 text-brand-500"
+                              : "text-ink-soft"
                           }`}
                         />
                       ))}
                     </div>
-                    <span className="text-sm text-gray-400">
+                    <span className="text-sm text-ink-muted">
                       {product.rating} ({product.reviews} reviews)
                     </span>
                   </div>
@@ -278,11 +278,11 @@ export default function ProductClient({
 
                 {/* Price */}
                 <div className="flex items-baseline gap-3 mb-6">
-                  <span className={`font-display text-3xl font-bold ${isComingSoon ? "text-amber-400/60" : "text-amber-400"}`}>
+                  <span className={`font-display text-3xl font-bold ${isComingSoon ? "text-brand-600" : "text-brand-500"}`}>
                     {formatPrice(displayPrice)}
                   </span>
                   {product.originalPrice && (
-                    <span className="text-lg text-gray-500 line-through">
+                    <span className="text-lg text-ink-soft line-through">
                       {formatPrice(product.originalPrice)}
                     </span>
                   )}
@@ -290,17 +290,17 @@ export default function ProductClient({
 
                 {/* v3.34 — Quantity-break offers for the selected variant. */}
                 {activePromotions.length > 0 && !isComingSoon && (
-                  <div className="mb-6 rounded-lg border border-amber-500/20 bg-amber-500/5 px-4 py-3">
-                    <p className="text-xs uppercase tracking-wider text-amber-400/80 mb-1.5">
+                  <div className="mb-6 rounded-lg border border-brand-500/20 bg-brand-500/5 px-4 py-3">
+                    <p className="text-xs uppercase tracking-wider text-brand-600 mb-1.5">
                       Buy more, pay less
                     </p>
                     <ul className="space-y-1">
                       {activePromotions.map((p) => (
-                        <li key={p.id} className="text-sm text-gray-300">
-                          <span className="text-amber-300 font-semibold">{p.minQty}+</span>{" "}
+                        <li key={p.id} className="text-sm text-ink-muted">
+                          <span className="text-brand-600 font-semibold">{p.minQty}+</span>{" "}
                           — {formatPrice(p.price)} each
                           {displayPrice > p.price && (
-                            <span className="text-gray-500">
+                            <span className="text-ink-soft">
                               {" "}
                               (save {Math.round(((displayPrice - p.price) / displayPrice) * 100)}%)
                             </span>
@@ -308,13 +308,13 @@ export default function ProductClient({
                         </li>
                       ))}
                     </ul>
-                    <p className="mt-1.5 text-[11px] text-gray-500">
+                    <p className="mt-1.5 text-[11px] text-ink-soft">
                       Discount applied automatically at checkout.
                     </p>
                   </div>
                 )}
 
-                <p className="text-gray-300 leading-relaxed mb-8">
+                <p className="text-ink-muted leading-relaxed mb-8">
                   {product.longDescription}
                 </p>
 
@@ -323,9 +323,9 @@ export default function ProductClient({
                   {product.features.map((f) => (
                     <div
                       key={f}
-                      className="flex items-center gap-2 text-sm text-gray-400"
+                      className="flex items-center gap-2 text-sm text-ink-muted"
                     >
-                      <div className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+                      <div className="w-1.5 h-1.5 rounded-full bg-brand-500" />
                       {f}
                     </div>
                   ))}
@@ -333,18 +333,18 @@ export default function ProductClient({
 
                 {/* Coming Soon — Notify Me */}
                 {isComingSoon ? (
-                  <div className="mb-8 p-6 rounded-lg bg-amber-500/5 border border-amber-500/20">
+                  <div className="mb-8 p-6 rounded-lg bg-brand-500/5 border border-brand-500/20">
                     <div className="flex items-center gap-2 mb-3">
-                      <Bell className="w-5 h-5 text-amber-400" />
-                      <h3 className="font-semibold text-amber-300">
+                      <Bell className="w-5 h-5 text-brand-500" />
+                      <h3 className="font-semibold text-brand-600">
                         This product is coming soon
                       </h3>
                     </div>
-                    <p className="text-sm text-gray-400 mb-4">
+                    <p className="text-sm text-ink-muted mb-4">
                       Be the first to know when this launches. Enter your email and we&apos;ll notify you.
                     </p>
                     {notifySubmitted ? (
-                      <div className="flex items-center gap-2 text-sm text-amber-400">
+                      <div className="flex items-center gap-2 text-sm text-brand-500">
                         <Mail className="w-4 h-4" />
                         Thanks! We&apos;ll email you at <span className="font-medium">{notifyEmail}</span> when it&apos;s ready.
                       </div>
@@ -381,11 +381,11 @@ export default function ProductClient({
                         {product.options.map((opt) => (
                           <div key={opt.name}>
                             <div className="flex items-center justify-between mb-2">
-                              <h3 className="font-semibold text-sm uppercase tracking-wider text-amber-400/80">
+                              <h3 className="font-semibold text-sm uppercase tracking-wider text-brand-600">
                                 {opt.name}
                               </h3>
                               {selectedOptions[opt.name] && (
-                                <span className="text-sm text-gray-400">
+                                <span className="text-sm text-ink-muted">
                                   {selectedOptions[opt.name]}
                                 </span>
                               )}
@@ -407,10 +407,10 @@ export default function ProductClient({
                                     }
                                     className={`px-3.5 py-2 rounded-full text-sm border transition ${
                                       selected
-                                        ? "bg-amber-500 text-charcoal-900 border-amber-500"
+                                        ? "bg-brand-500 text-white border-brand-500"
                                         : available
-                                        ? "bg-charcoal-400/30 text-gray-200 border-charcoal-50/20 hover:border-amber-400/60"
-                                        : "bg-charcoal-400/10 text-gray-600 border-charcoal-50/10 line-through cursor-not-allowed"
+                                        ? "bg-surface-card/30 text-ink border-surface-line/20 hover:border-brand-500/60"
+                                        : "bg-surface-card/10 text-ink-soft border-surface-line/10 line-through cursor-not-allowed"
                                     }`}
                                   >
                                     {val}
@@ -425,14 +425,14 @@ export default function ProductClient({
 
                     {/* Customisation */}
                     {product.customisable && product.customOptions && (
-                      <div className="mb-8 p-4 rounded-lg bg-charcoal-400/30 border border-charcoal-50/20">
-                        <h3 className="font-semibold text-sm uppercase tracking-wider text-amber-400/80 mb-3">
+                      <div className="mb-8 p-4 rounded-lg bg-surface-card/30 border border-surface-line/20">
+                        <h3 className="font-semibold text-sm uppercase tracking-wider text-brand-600 mb-3">
                           Personalisation Options
                         </h3>
                         <div className="space-y-3">
                           {product.customOptions.map((opt) => (
-                            <div key={opt} className="flex items-center gap-2 text-sm text-gray-300">
-                              <div className="w-1.5 h-1.5 rounded-full bg-amber-500/50" />
+                            <div key={opt} className="flex items-center gap-2 text-sm text-ink-muted">
+                              <div className="w-1.5 h-1.5 rounded-full bg-brand-500/50" />
                               {opt}
                             </div>
                           ))}
@@ -449,10 +449,10 @@ export default function ProductClient({
 
                     {/* Quantity & Add to Cart */}
                     <div className="flex items-center gap-4 mb-8">
-                      <div className="flex items-center border border-charcoal-50 rounded">
+                      <div className="flex items-center border border-surface-line rounded">
                         <button
                           onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                          className="p-2.5 text-gray-400 hover:text-foreground transition-colors"
+                          className="p-2.5 text-ink-muted hover:text-foreground transition-colors"
                         >
                           <Minus className="w-4 h-4" />
                         </button>
@@ -461,7 +461,7 @@ export default function ProductClient({
                         </span>
                         <button
                           onClick={() => setQuantity(quantity + 1)}
-                          className="p-2.5 text-gray-400 hover:text-foreground transition-colors"
+                          className="p-2.5 text-ink-muted hover:text-foreground transition-colors"
                         >
                           <Plus className="w-4 h-4" />
                         </button>
@@ -489,16 +489,16 @@ export default function ProductClient({
                 )}
 
                 {/* Trust badges */}
-                <div className="grid grid-cols-3 gap-4 pt-6 border-t border-charcoal-50/20">
+                <div className="grid grid-cols-3 gap-4 pt-6 border-t border-surface-line/20">
                   {[
                     { icon: Truck, label: "Free UK Shipping", sub: "Over £50" },
                     { icon: Shield, label: "Quality Guarantee", sub: "Handmade care" },
                     { icon: RotateCcw, label: "Easy Returns", sub: "14-day policy" },
                   ].map((item) => (
                     <div key={item.label} className="text-center">
-                      <item.icon className="w-5 h-5 text-amber-500/70 mx-auto mb-1" />
+                      <item.icon className="w-5 h-5 text-brand-600 mx-auto mb-1" />
                       <p className="text-xs font-medium">{item.label}</p>
-                      <p className="text-xs text-gray-500">{item.sub}</p>
+                      <p className="text-xs text-ink-soft">{item.sub}</p>
                     </div>
                   ))}
                 </div>
@@ -510,7 +510,7 @@ export default function ProductClient({
 
       {/* Related Products */}
       {related.length > 0 && (
-        <section className="py-16 bg-charcoal-600">
+        <section className="py-16 bg-surface-strip">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <h2 className="font-display text-2xl font-bold mb-8">
               You Might Also <span className="text-gradient">Like</span>

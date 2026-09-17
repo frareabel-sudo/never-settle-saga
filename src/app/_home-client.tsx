@@ -31,37 +31,37 @@ const categoryCards = [
     icon: Flame,
     title: "3D FDM Printing",
     desc: "Custom objects, functional parts, decorative pieces",
-    color: "from-orange-500/20 to-amber-500/5",
+    color: "from-orange-500/20 to-brand-500/5",
   },
   {
     icon: Zap,
     title: "Resin Printing",
     desc: "Ultra-fine detail, smooth finish, miniatures & figurines",
-    color: "from-purple-500/20 to-amber-500/5",
+    color: "from-purple-500/20 to-brand-500/5",
   },
   {
     icon: Sparkles,
     title: "Lithophane Lamps",
     desc: "Your photo embedded in light — coming soon",
-    color: "from-amber-500/20 to-yellow-500/5",
+    color: "from-brand-500/20 to-brand-400/5",
   },
   {
     icon: Palette,
     title: "Miniatures",
     desc: "Custom tabletop gaming miniatures, hand-finished",
-    color: "from-emerald-500/20 to-amber-500/5",
+    color: "from-emerald-500/20 to-brand-500/5",
   },
   {
     icon: PartyPopper,
     title: "Kit Party",
     desc: "DIY craft kits for parties — everything included",
-    color: "from-pink-500/20 to-amber-500/5",
+    color: "from-pink-500/20 to-brand-500/5",
   },
   {
     icon: BookOpen,
     title: "Agendas & Planners",
     desc: "Laser-engraved personalised planners & agendas",
-    color: "from-blue-500/20 to-amber-500/5",
+    color: "from-blue-500/20 to-brand-500/5",
   },
 ];
 
@@ -87,21 +87,21 @@ export default function HomeClient({
       {/* ===== HERO ===== */}
       <section
         ref={heroRef}
-        className="relative h-screen flex items-center justify-center overflow-hidden bg-charcoal-900"
+        className="relative h-screen flex items-center justify-center overflow-hidden bg-surface"
       >
         {/* Deep black base with subtle radial gradient */}
         <motion.div
           style={{ scale: heroScale }}
           className="absolute inset-0"
         >
-          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_rgba(212,160,32,0.06)_0%,_rgba(10,10,10,1)_70%)]" />
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_rgba(156,66,33,0.07)_0%,_rgba(253,246,241,1)_70%)]" />
           <div className="absolute inset-0 bg-noise opacity-40" />
         </motion.div>
 
         {/* Ambient glow orbs */}
-        <div className="absolute top-1/3 left-1/4 w-[500px] h-[500px] bg-amber-500/[0.04] rounded-full blur-[150px] animate-pulse" />
-        <div className="absolute bottom-1/4 right-1/3 w-[400px] h-[400px] bg-amber-600/[0.03] rounded-full blur-[130px]" />
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-amber-500/[0.02] rounded-full blur-[200px]" />
+        <div className="absolute top-1/3 left-1/4 w-[500px] h-[500px] bg-brand-500/[0.04] rounded-full blur-[150px] animate-pulse" />
+        <div className="absolute bottom-1/4 right-1/3 w-[400px] h-[400px] bg-brand-600/[0.03] rounded-full blur-[130px]" />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-brand-500/[0.02] rounded-full blur-[200px]" />
 
         {/* Particle field */}
         <ParticleField />
@@ -116,7 +116,7 @@ export default function HomeClient({
             initial={{ opacity: 0, width: 0 }}
             animate={{ opacity: 1, width: 80 }}
             transition={{ duration: 1, delay: 0.3 }}
-            className="h-[1px] bg-gradient-to-r from-transparent via-amber-500 to-transparent mx-auto mb-10"
+            className="h-[1px] bg-gradient-to-r from-transparent via-brand-500 to-transparent mx-auto mb-10"
           />
 
           {/* Main headline */}
@@ -128,7 +128,7 @@ export default function HomeClient({
           >
             <span className="text-foreground">Never Settle</span>
             <br />
-            <span className="bg-clip-text text-transparent bg-gradient-to-r from-amber-200 via-amber-400 to-amber-600">
+            <span className="bg-clip-text text-transparent bg-gradient-to-r from-brand-500 via-brand-500 to-brand-600">
               Saga
             </span>
           </motion.h1>
@@ -138,7 +138,7 @@ export default function HomeClient({
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.8 }}
-            className="font-display text-lg sm:text-xl md:text-2xl font-light tracking-[0.15em] text-gray-400 mb-12"
+            className="font-display text-lg sm:text-xl md:text-2xl font-light tracking-[0.15em] text-ink-muted mb-12"
           >
             Handcrafted. Personalised. Unforgettable.
           </motion.p>
@@ -171,36 +171,36 @@ export default function HomeClient({
           transition={{ delay: 1.8 }}
           className="absolute bottom-8 left-1/2 -translate-x-1/2 z-10 flex flex-col items-center gap-2"
         >
-          <span className="text-[10px] tracking-[0.3em] uppercase text-gray-600">
+          <span className="text-[10px] tracking-[0.3em] uppercase text-ink-soft">
             Scroll
           </span>
           <motion.div
             animate={{ y: [0, 8, 0] }}
             transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
           >
-            <ChevronDown className="w-4 h-4 text-amber-500/40" />
+            <ChevronDown className="w-4 h-4 text-brand-600" />
           </motion.div>
         </motion.div>
 
         {/* Bottom fade */}
-        <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-charcoal-900 to-transparent z-[2]" />
+        <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-surface to-transparent z-[2]" />
       </section>
 
       {/* ===== MARQUEE ===== */}
       <Marquee />
 
       {/* ===== CATEGORIES ===== */}
-      <section className="py-28 bg-charcoal-900 relative">
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_rgba(212,160,32,0.03)_0%,_transparent_60%)]" />
+      <section className="py-28 bg-surface relative">
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_rgba(156,66,33,0.05)_0%,_transparent_60%)]" />
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
           <FadeIn className="text-center mb-16">
-            <p className="text-amber-500/50 text-xs uppercase tracking-[0.4em] mb-4">
+            <p className="text-brand-600 text-xs uppercase tracking-[0.4em] mb-4">
               What We Create
             </p>
             <h2 className="font-display text-4xl sm:text-5xl font-bold mb-4">
               Our <span className="text-gradient">Craft</span>
             </h2>
-            <p className="text-gray-500 max-w-xl mx-auto text-lg">
+            <p className="text-ink-soft max-w-xl mx-auto text-lg">
               Six disciplines. One obsession.
             </p>
           </FadeIn>
@@ -212,22 +212,22 @@ export default function HomeClient({
             {categoryCards.map((item) => (
               <StaggerItem key={item.title}>
                 <Link href={`/shop?category=${encodeURIComponent(item.title)}`}>
-                  <div className="group relative p-7 rounded-xl bg-charcoal-800/60 border border-charcoal-50/10 hover:border-amber-500/25 transition-all duration-500 h-full overflow-hidden">
+                  <div className="group relative p-7 rounded-xl bg-surface-alt/60 border border-surface-line/10 hover:border-brand-500/25 transition-all duration-500 h-full overflow-hidden">
                     {/* Hover glow background */}
                     <div className={`absolute inset-0 bg-gradient-to-br ${item.color} opacity-0 group-hover:opacity-100 transition-opacity duration-500 rounded-xl`} />
 
                     {/* Content */}
                     <div className="relative">
-                      <div className="w-12 h-12 rounded-xl bg-amber-500/10 flex items-center justify-center mb-5 group-hover:bg-amber-500/20 group-hover:shadow-lg group-hover:shadow-amber-500/10 transition-all duration-500">
-                        <item.icon className="w-6 h-6 text-amber-400" />
+                      <div className="w-12 h-12 rounded-xl bg-brand-500/10 flex items-center justify-center mb-5 group-hover:bg-brand-500/20 group-hover:shadow-lg group-hover:shadow-brand-500/10 transition-all duration-500">
+                        <item.icon className="w-6 h-6 text-brand-500" />
                       </div>
-                      <h3 className="font-display font-semibold text-lg mb-2 text-foreground group-hover:text-amber-200 transition-colors duration-300">
+                      <h3 className="font-display font-semibold text-lg mb-2 text-foreground group-hover:text-brand-600 transition-colors duration-300">
                         {item.title}
                       </h3>
-                      <p className="text-sm text-gray-500 group-hover:text-gray-400 transition-colors duration-300">
+                      <p className="text-sm text-ink-soft group-hover:text-ink-muted transition-colors duration-300">
                         {item.desc}
                       </p>
-                      <div className="mt-4 flex items-center gap-1 text-xs text-amber-500/0 group-hover:text-amber-500/70 transition-all duration-300 translate-y-2 group-hover:translate-y-0">
+                      <div className="mt-4 flex items-center gap-1 text-xs text-brand-500/0 group-hover:text-brand-600 transition-all duration-300 translate-y-2 group-hover:translate-y-0">
                         Explore <ArrowRight className="w-3 h-3" />
                       </div>
                     </div>
@@ -240,24 +240,24 @@ export default function HomeClient({
       </section>
 
       {/* ===== BRAND STATEMENT ===== */}
-      <section className="py-32 bg-charcoal-900 relative overflow-hidden">
+      <section className="py-32 bg-surface relative overflow-hidden">
         <div className="absolute inset-0 bg-noise opacity-30" />
         {/* Decorative lines */}
-        <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-amber-500/20 to-transparent" />
-        <div className="absolute bottom-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-amber-500/20 to-transparent" />
+        <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-brand-500/20 to-transparent" />
+        <div className="absolute bottom-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-brand-500/20 to-transparent" />
 
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 relative text-center">
           <FadeIn>
             <motion.h2
               className="font-display text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold leading-[1.1] tracking-tight"
             >
-              <span className="text-gray-600">We don&apos;t make products.</span>
+              <span className="text-ink-soft">We don&apos;t make products.</span>
               <br />
               <span className="text-gradient">We make memories.</span>
             </motion.h2>
           </FadeIn>
           <FadeIn delay={0.3}>
-            <p className="mt-8 text-lg text-gray-500 max-w-2xl mx-auto leading-relaxed">
+            <p className="mt-8 text-lg text-ink-soft max-w-2xl mx-auto leading-relaxed">
               Every piece that leaves our London workshop carries a piece of
               someone&apos;s story. A birthday. A memory. A moment worth keeping forever.
             </p>
@@ -276,7 +276,7 @@ export default function HomeClient({
       </section>
 
       {/* ===== SOCIAL PROOF ===== */}
-      <section className="py-16 bg-charcoal-800/50 border-y border-charcoal-50/5">
+      <section className="py-16 bg-surface-alt/50 border-y border-surface-line/5">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
           <FadeIn>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-8 md:gap-4">
@@ -310,14 +310,14 @@ export default function HomeClient({
                   <stat.icon
                     className={`w-5 h-5 mx-auto mb-3 ${
                       stat.accent
-                        ? "text-amber-400 fill-amber-400"
-                        : "text-amber-500/50"
+                        ? "text-brand-500 fill-brand-500"
+                        : "text-brand-600"
                     }`}
                   />
                   <p className="font-display text-2xl sm:text-3xl font-bold text-foreground">
                     {stat.value}
                   </p>
-                  <p className="text-xs text-gray-500 mt-1 tracking-wider uppercase">
+                  <p className="text-xs text-ink-soft mt-1 tracking-wider uppercase">
                     {stat.label}
                   </p>
                 </div>
@@ -329,15 +329,15 @@ export default function HomeClient({
 
       {/* ===== FEATURED PRODUCTS ===== */}
       {featuredProducts.length > 0 && (
-        <section className="py-24 bg-charcoal-900 relative">
-          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[600px] bg-amber-500/[0.03] rounded-full blur-[150px]" />
+        <section className="py-24 bg-surface relative">
+          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[600px] bg-brand-500/[0.03] rounded-full blur-[150px]" />
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
             <FadeIn className="flex items-end justify-between mb-12">
               <div>
                 <h2 className="font-display text-3xl sm:text-4xl font-bold mb-2">
                   Featured <span className="text-gradient">Products</span>
                 </h2>
-                <p className="text-gray-500">Our most loved creations</p>
+                <p className="text-ink-soft">Our most loved creations</p>
               </div>
               <Link href="/shop">
                 <Button variant="outline" className="hidden sm:flex gap-2">
@@ -364,10 +364,10 @@ export default function HomeClient({
       )}
 
       {/* ===== TESTIMONIALS ===== */}
-      <section className="py-24 bg-charcoal-900">
+      <section className="py-24 bg-surface">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <FadeIn className="text-center mb-16">
-            <p className="text-amber-500/50 text-xs uppercase tracking-[0.4em] mb-4">
+            <p className="text-brand-600 text-xs uppercase tracking-[0.4em] mb-4">
               Testimonials
             </p>
             <h2 className="font-display text-4xl sm:text-5xl font-bold mb-4">
@@ -377,7 +377,7 @@ export default function HomeClient({
 
           <TestimonialsCarousel reviews={reviews} />
           {reviews.length > 1 && (
-            <p className="text-center text-xs text-gray-600 mt-6">
+            <p className="text-center text-xs text-ink-soft mt-6">
               Showing {reviews.length} verified review{reviews.length === 1 ? "" : "s"}
             </p>
           )}
@@ -385,16 +385,16 @@ export default function HomeClient({
       </section>
 
       {/* ===== NEWSLETTER ===== */}
-      <section className="py-24 bg-charcoal-800/30 border-t border-charcoal-50/5">
+      <section className="py-24 bg-surface-alt/30 border-t border-surface-line/5">
         <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <FadeIn>
-            <p className="text-amber-500/50 text-xs uppercase tracking-[0.4em] mb-4">
+            <p className="text-brand-600 text-xs uppercase tracking-[0.4em] mb-4">
               Stay in the Loop
             </p>
             <h2 className="font-display text-4xl sm:text-5xl font-bold mb-4">
               Join the <span className="text-gradient">Saga</span>
             </h2>
-            <p className="text-gray-500 mb-8 text-lg">
+            <p className="text-ink-soft mb-8 text-lg">
               New drops, behind-the-scenes content, and exclusive offers.
             </p>
             <form
@@ -411,7 +411,7 @@ export default function HomeClient({
                 Subscribe
               </Button>
             </form>
-            <p className="text-xs text-gray-700 mt-3">
+            <p className="text-xs text-ink-soft mt-3">
               No spam. Unsubscribe anytime.
             </p>
           </FadeIn>

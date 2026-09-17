@@ -56,9 +56,9 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="dark">
+    <html lang="en">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased bg-charcoal-900 text-foreground`}
+        className={`${geistSans.variable} ${geistMono.variable} antialiased bg-surface text-foreground`}
       >
         <Analytics />
         <StructuredData />

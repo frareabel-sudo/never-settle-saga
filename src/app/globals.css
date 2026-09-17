@@ -3,8 +3,8 @@
 @tailwind utilities;
 
 :root {
-  --background: #0A0A0A;
-  --foreground: #F5F0E8;
+  --background: #FDF6F1;
+  --foreground: #2A201B;
 }
 
 body {
@@ -13,8 +13,8 @@ body {
 }
 
 ::selection {
-  background: rgba(212, 160, 32, 0.3);
-  color: #FFF8E1;
+  background: rgba(156, 66, 33, 0.18);
+  color: #2A201B;
 }
 
 ::-webkit-scrollbar {
@@ -22,21 +22,21 @@ body {
 }
 
 ::-webkit-scrollbar-track {
-  background: #111111;
+  background: #F3E4D8;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #333;
+  background: #D9C3B0;
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #D4A020;
+  background: #9C4221;
 }
 
 @layer base {
   * {
-    @apply border-charcoal-50;
+    @apply border-surface-line;
   }
 
   h1, h2, h3, h4, h5, h6 {
@@ -53,15 +53,19 @@ body {
     text-wrap: balance;
   }
 
+  /* On cream the old three-stop gold shimmer turns to mud — a short,
+     dark-to-darker terracotta sweep keeps the headline readable. */
   .text-gradient {
-    @apply bg-clip-text text-transparent bg-gradient-to-r from-amber-300 via-amber-500 to-amber-300;
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-brand-600 via-brand-500 to-brand-600;
   }
 
   .bg-noise {
     background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
   }
 
+  /* A glow reads as a halo on black but as dirt on cream — this is now a
+     hairline plus a soft lift instead. */
   .border-glow {
-    @apply border border-amber-500/20 shadow-[0_0_15px_rgba(212,160,32,0.1)];
+    @apply border border-brand-500/20 shadow-[0_2px_10px_rgba(42,32,27,0.06)];
   }
 }

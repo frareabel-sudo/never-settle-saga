@@ -10,13 +10,13 @@ export default async function BlogPage() {
   return (
     <>
       {/* Header */}
-      <section className="pt-24 lg:pt-28 pb-8 bg-charcoal-900">
+      <section className="pt-24 lg:pt-28 pb-8 bg-surface">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <FadeIn>
             <h1 className="font-display text-4xl sm:text-5xl font-bold mb-4">
               The <span className="text-gradient">Journal</span>
             </h1>
-            <p className="text-gray-400 text-lg max-w-2xl">
+            <p className="text-ink-muted text-lg max-w-2xl">
               Stories from the workshop, gift guides, and the craft behind what we make.
             </p>
           </FadeIn>

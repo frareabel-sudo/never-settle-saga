@@ -18,11 +18,11 @@ export default function AboutPage() {
             fill
             className="object-cover opacity-20"
           />
-          <div className="absolute inset-0 bg-gradient-to-b from-charcoal-900/50 via-charcoal-900/80 to-charcoal-900" />
+          <div className="absolute inset-0 bg-gradient-to-b from-surface/50 via-surface/80 to-surface" />
         </div>
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 relative text-center">
           <FadeIn>
-            <p className="text-amber-500/60 text-sm uppercase tracking-[0.3em] mb-4">
+            <p className="text-brand-600 text-sm uppercase tracking-[0.3em] mb-4">
               Our Story
             </p>
           </FadeIn>
@@ -33,7 +33,7 @@ export default function AboutPage() {
             </h1>
           </FadeIn>
           <FadeIn delay={0.4}>
-            <p className="text-xl text-gray-300 leading-relaxed max-w-2xl mx-auto">
+            <p className="text-xl text-ink-muted leading-relaxed max-w-2xl mx-auto">
               We are Abel and Jennifer — a couple who turned creativity into craft,
               and craft into Never Settle Saga. From our London studio, every piece
               we make carries a little piece of us. We don&apos;t do mass production.
@@ -44,7 +44,7 @@ export default function AboutPage() {
       </section>
 
       {/* Brand Story */}
-      <section className="py-24 bg-charcoal-800">
+      <section className="py-24 bg-surface-alt">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
             <FadeIn direction="left">
@@ -55,7 +55,7 @@ export default function AboutPage() {
                   fill
                   className="object-cover"
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-charcoal-800/50 to-transparent" />
+                <div className="absolute inset-0 bg-gradient-to-t from-surface/50 to-transparent" />
               </div>
             </FadeIn>
             <FadeIn direction="right">
@@ -63,7 +63,7 @@ export default function AboutPage() {
                 <h2 className="font-display text-3xl font-bold mb-6">
                   The <span className="text-gradient">Beginning</span>
                 </h2>
-                <div className="space-y-4 text-gray-300 leading-relaxed">
+                <div className="space-y-4 text-ink-muted leading-relaxed">
                   <p>
                     It started in 2022, in the spare room of a small London flat.
                     Abel had been tinkering with 3D printing as a hobby, but when
@@ -90,13 +90,13 @@ export default function AboutPage() {
       </section>
 
       {/* Meet the Makers */}
-      <section className="py-24 bg-charcoal-900">
+      <section className="py-24 bg-surface">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <FadeIn className="text-center mb-16">
             <h2 className="font-display text-3xl sm:text-4xl font-bold mb-4">
               Meet the <span className="text-gradient">Makers</span>
             </h2>
-            <p className="text-gray-400 max-w-2xl mx-auto">
+            <p className="text-ink-muted max-w-2xl mx-auto">
               Behind every product is a husband-and-wife team who believe in making
               things that matter.
             </p>
@@ -107,7 +107,7 @@ export default function AboutPage() {
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 items-center">
                 {/* Team photo */}
                 <div>
-                  <div className="relative aspect-[3/4] rounded-xl overflow-hidden border border-charcoal-50/10 shadow-2xl shadow-black/30">
+                  <div className="relative aspect-[3/4] rounded-xl overflow-hidden border border-surface-line/10 shadow-2xl shadow-ink/30">
                     <Image
                       src="/images/about/about-team.jpg"
                       alt="Abel, Jennifer and family at the London Eye"
@@ -115,7 +115,7 @@ export default function AboutPage() {
                       className="object-cover"
                     />
                   </div>
-                  <p className="text-center text-sm text-gray-500 mt-4 italic">
+                  <p className="text-center text-sm text-ink-soft mt-4 italic">
                     Abel, Jennifer &amp; family — London Eye, London 🇬🇧
                   </p>
                 </div>
@@ -124,18 +124,18 @@ export default function AboutPage() {
                 <div className="space-y-8">
                   <div>
                     <h3 className="font-display text-xl font-bold mb-1">Abel</h3>
-                    <p className="text-amber-500/70 text-sm mb-3">Founder &amp; Master Maker</p>
-                    <p className="text-sm text-gray-400 leading-relaxed">
+                    <p className="text-brand-600 text-sm mb-3">Founder &amp; Master Maker</p>
+                    <p className="text-sm text-ink-muted leading-relaxed">
                       Self-taught 3D printing enthusiast turned professional craftsman.
                       Abel runs every printer, calibrates every laser and cutting machine,
                       and hand-finishes every product. His obsession with detail borders on unhealthy — and
                       that&apos;s exactly what makes the work extraordinary.
                     </p>
                   </div>
-                  <div className="border-t border-charcoal-50/10 pt-8">
+                  <div className="border-t border-surface-line/10 pt-8">
                     <h3 className="font-display text-xl font-bold mb-1">Jennifer</h3>
-                    <p className="text-amber-500/70 text-sm mb-3">Co-Founder &amp; Creative Director</p>
-                    <p className="text-sm text-gray-400 leading-relaxed">
+                    <p className="text-brand-600 text-sm mb-3">Co-Founder &amp; Creative Director</p>
+                    <p className="text-sm text-ink-muted leading-relaxed">
                       The heart and voice of Never Settle Saga. Jennifer handles creative
                       direction, brand identity, customer experience, and the personal
                       touches that turn a product into a gift. Every handwritten note
@@ -150,13 +150,13 @@ export default function AboutPage() {
       </section>
 
       {/* Our Process */}
-      <section className="py-24 bg-charcoal-800 bg-noise">
+      <section className="py-24 bg-surface-alt bg-noise">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <FadeIn className="text-center mb-16">
             <h2 className="font-display text-3xl sm:text-4xl font-bold mb-4">
               Our <span className="text-gradient">Process</span>
             </h2>
-            <p className="text-gray-400 max-w-2xl mx-auto">
+            <p className="text-ink-muted max-w-2xl mx-auto">
               From your idea to your doorstep — every step is deliberate.
             </p>
           </FadeIn>
@@ -186,14 +186,14 @@ export default function AboutPage() {
             ].map((item) => (
               <StaggerItem key={item.step}>
                 <div className="relative">
-                  <span className="font-display text-6xl font-bold text-amber-500/10 absolute -top-4 -left-2">
+                  <span className="font-display text-6xl font-bold text-brand-500/10 absolute -top-4 -left-2">
                     {item.step}
                   </span>
                   <div className="relative pt-8 pl-2">
                     <h3 className="font-display text-xl font-bold mb-2">
                       {item.title}
                     </h3>
-                    <p className="text-sm text-gray-400 leading-relaxed">
+                    <p className="text-sm text-ink-muted leading-relaxed">
                       {item.desc}
                     </p>
                   </div>
@@ -205,13 +205,13 @@ export default function AboutPage() {
       </section>
 
       {/* Equipment & Craft */}
-      <section className="py-24 bg-charcoal-900">
+      <section className="py-24 bg-surface">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <FadeIn className="text-center mb-16">
             <h2 className="font-display text-3xl sm:text-4xl font-bold mb-4">
               Tools of the <span className="text-gradient">Trade</span>
             </h2>
-            <p className="text-gray-400 max-w-2xl mx-auto">
+            <p className="text-ink-muted max-w-2xl mx-auto">
               Professional-grade equipment meets artisan care.
             </p>
           </FadeIn>
@@ -245,12 +245,12 @@ export default function AboutPage() {
               },
             ].map((item) => (
               <StaggerItem key={item.title}>
-                <div className="p-6 rounded-lg bg-charcoal-800/40 border border-charcoal-50/10 h-full">
-                  <item.icon className="w-8 h-8 text-amber-400 mb-4" />
+                <div className="p-6 rounded-lg bg-surface-alt/40 border border-surface-line/10 h-full">
+                  <item.icon className="w-8 h-8 text-brand-500 mb-4" />
                   <h3 className="font-display font-semibold text-lg mb-2">
                     {item.title}
                   </h3>
-                  <p className="text-sm text-gray-400 leading-relaxed">
+                  <p className="text-sm text-ink-muted leading-relaxed">
                     {item.desc}
                   </p>
                 </div>
@@ -261,17 +261,17 @@ export default function AboutPage() {
       </section>
 
       {/* CTA */}
-      <section className="py-24 bg-charcoal-800/50 border-t border-charcoal-50/5 text-center">
+      <section className="py-24 bg-surface-alt/50 border-t border-surface-line/5 text-center">
         <div className="max-w-2xl mx-auto px-4">
           <FadeIn>
-            <p className="text-amber-500/50 text-xs uppercase tracking-[0.4em] mb-6">
+            <p className="text-brand-600 text-xs uppercase tracking-[0.4em] mb-6">
               What are you waiting for?
             </p>
             <h2 className="font-display text-3xl sm:text-4xl font-bold mb-4">
               Your journey starts here — because settling is{" "}
               <span className="text-gradient">never an option</span>.
             </h2>
-            <p className="text-gray-400 mb-8">
+            <p className="text-ink-muted mb-8">
               Browse our collection or get in touch with a custom request.
             </p>
             <div className="flex flex-wrap gap-4 justify-center">

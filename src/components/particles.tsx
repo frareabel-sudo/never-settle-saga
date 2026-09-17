@@ -70,9 +70,9 @@ export function ParticleField() {
           p.x, p.y, 0,
           p.x, p.y, glow
         );
-        gradient.addColorStop(0, `rgba(212, 160, 32, ${currentOpacity * 0.8})`);
-        gradient.addColorStop(0.4, `rgba(212, 160, 32, ${currentOpacity * 0.3})`);
-        gradient.addColorStop(1, "rgba(212, 160, 32, 0)");
+        gradient.addColorStop(0, `rgba(156, 66, 33, ${currentOpacity * 0.55})`);
+        gradient.addColorStop(0.4, `rgba(156, 66, 33, ${currentOpacity * 0.22})`);
+        gradient.addColorStop(1, "rgba(156, 66, 33, 0)");
 
         ctx.beginPath();
         ctx.arc(p.x, p.y, glow, 0, Math.PI * 2);

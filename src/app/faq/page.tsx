@@ -34,7 +34,7 @@ export default function FAQPage() {
       <PolicyH3>Are all your products made to order?</PolicyH3>
       <p>
         Yes. Nothing on the site is held in mass stock. When you place an order, we begin production specifically for you. This is why we ask you to contact us at{" "}
-        <a href="mailto:helpdesk@neversettlesaga.com" className="text-amber-400 hover:text-amber-300 underline">
+        <a href="mailto:helpdesk@neversettlesaga.com" className="text-brand-500 hover:text-brand-600 underline">
           helpdesk@neversettlesaga.com
         </a>{" "}
         to confirm specifications before or shortly after ordering.
@@ -58,7 +58,7 @@ export default function FAQPage() {
       <PolicyH3>Can I change my order after placing it?</PolicyH3>
       <p>
         If we haven&apos;t started production yet, almost certainly. Email us as soon as possible at{" "}
-        <a href="mailto:helpdesk@neversettlesaga.com" className="text-amber-400 hover:text-amber-300 underline">
+        <a href="mailto:helpdesk@neversettlesaga.com" className="text-brand-500 hover:text-brand-600 underline">
           helpdesk@neversettlesaga.com
         </a>
         . Once production has started, changes may not be possible.
@@ -74,7 +74,7 @@ export default function FAQPage() {
       <PolicyH3>Can I send my own image for a lithophane?</PolicyH3>
       <p>
         Yes — that&apos;s the whole point. After ordering, send us the image you want at{" "}
-        <a href="mailto:helpdesk@neversettlesaga.com" className="text-amber-400 hover:text-amber-300 underline">
+        <a href="mailto:helpdesk@neversettlesaga.com" className="text-brand-500 hover:text-brand-600 underline">
           helpdesk@neversettlesaga.com
         </a>
         . We&apos;ll let you know if any adjustments are needed (resolution, contrast, framing) before printing.
@@ -82,11 +82,11 @@ export default function FAQPage() {
 
       <PolicyH3>What materials do you use?</PolicyH3>
       <PolicyList>
-        <li><strong className="text-white">Lithophane lamps:</strong> ABS-Like resin (resin-printed lithophanes) or specialised filament (FDM-printed lithophanes), depending on the design</li>
-        <li><strong className="text-white">Miniatures:</strong> ASA, PETG, or resin depending on durability needs</li>
-        <li><strong className="text-white">Retro TV lamps:</strong> PLA or ASA bodies with custom electronics (DFPlayer Mini audio modules, PWM dimming, rechargeable LiPo power)</li>
-        <li><strong className="text-white">Mugs:</strong> sublimation-grade ceramic</li>
-        <li><strong className="text-white">Laser-cut items:</strong> acrylic, MDF, or other substrates depending on the project</li>
+        <li><strong className="text-ink">Lithophane lamps:</strong> ABS-Like resin (resin-printed lithophanes) or specialised filament (FDM-printed lithophanes), depending on the design</li>
+        <li><strong className="text-ink">Miniatures:</strong> ASA, PETG, or resin depending on durability needs</li>
+        <li><strong className="text-ink">Retro TV lamps:</strong> PLA or ASA bodies with custom electronics (DFPlayer Mini audio modules, PWM dimming, rechargeable LiPo power)</li>
+        <li><strong className="text-ink">Mugs:</strong> sublimation-grade ceramic</li>
+        <li><strong className="text-ink">Laser-cut items:</strong> acrylic, MDF, or other substrates depending on the project</li>
       </PolicyList>
 
       <PolicyH3>Are your products waterproof?</PolicyH3>
@@ -104,7 +104,7 @@ export default function FAQPage() {
       <PolicyH3>Do you ship internationally?</PolicyH3>
       <p>
         Yes — UK, EU, and selected destinations worldwide. For destinations outside the EU, please contact us first at{" "}
-        <a href="mailto:helpdesk@neversettlesaga.com" className="text-amber-400 hover:text-amber-300 underline">
+        <a href="mailto:helpdesk@neversettlesaga.com" className="text-brand-500 hover:text-brand-600 underline">
           helpdesk@neversettlesaga.com
         </a>{" "}
         so we can quote shipping accurately for your country.
@@ -123,7 +123,7 @@ export default function FAQPage() {
       <PolicyH3>Can I return a personalised product?</PolicyH3>
       <p>
         Generally no — personalised and made-to-order items are exempt from the standard 14-day right to cancel under UK consumer law. See our{" "}
-        <Link href="/returns" className="text-amber-400 hover:text-amber-300 underline">Returns Policy</Link>{" "}
+        <Link href="/returns" className="text-brand-500 hover:text-brand-600 underline">Returns Policy</Link>{" "}
         for full details.
       </p>
 
@@ -149,7 +149,7 @@ export default function FAQPage() {
       <PolicyH3>Do you offer commissions for unique pieces?</PolicyH3>
       <p>
         Yes. If you have an idea that doesn&apos;t fit our standard product range, email{" "}
-        <a href="mailto:helpdesk@neversettlesaga.com" className="text-amber-400 hover:text-amber-300 underline">
+        <a href="mailto:helpdesk@neversettlesaga.com" className="text-brand-500 hover:text-brand-600 underline">
           helpdesk@neversettlesaga.com
         </a>{" "}
         with a description and we&apos;ll let you know if it&apos;s something we can take on.
@@ -168,7 +168,7 @@ export default function FAQPage() {
       <PolicyH2>Contact</PolicyH2>
       <p>
         Anything we haven&apos;t covered? Email{" "}
-        <a href="mailto:helpdesk@neversettlesaga.com" className="text-amber-400 hover:text-amber-300 underline">
+        <a href="mailto:helpdesk@neversettlesaga.com" className="text-brand-500 hover:text-brand-600 underline">
           helpdesk@neversettlesaga.com
         </a>{" "}
         and we&apos;ll get back to you within 1 to 2 business days.

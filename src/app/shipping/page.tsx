@@ -20,14 +20,14 @@ export default function ShippingPage() {
       <PolicyH2>Where we ship</PolicyH2>
       <PolicyList>
         <li>
-          <strong className="text-white">United Kingdom</strong> — Standard shipping across England, Scotland, Wales, and Northern Ireland.
+          <strong className="text-ink">United Kingdom</strong> — Standard shipping across England, Scotland, Wales, and Northern Ireland.
         </li>
         <li>
-          <strong className="text-white">European Union</strong> — We ship to all EU member states.
+          <strong className="text-ink">European Union</strong> — We ship to all EU member states.
         </li>
         <li>
-          <strong className="text-white">Rest of the world</strong> — We do ship internationally outside the UK and EU, but pricing and delivery options vary significantly by destination. For international orders outside the EU, please contact us at{" "}
-          <a href="mailto:helpdesk@neversettlesaga.com" className="text-amber-400 hover:text-amber-300 underline">
+          <strong className="text-ink">Rest of the world</strong> — We do ship internationally outside the UK and EU, but pricing and delivery options vary significantly by destination. For international orders outside the EU, please contact us at{" "}
+          <a href="mailto:helpdesk@neversettlesaga.com" className="text-brand-500 hover:text-brand-600 underline">
             helpdesk@neversettlesaga.com
           </a>{" "}
           before placing your order so we can confirm shipping costs, customs handling, and estimated delivery time for your specific country.
@@ -48,7 +48,7 @@ export default function ShippingPage() {
       </PolicyList>
       <p>
         You can reach us at{" "}
-        <a href="mailto:helpdesk@neversettlesaga.com" className="text-amber-400 hover:text-amber-300 underline">
+        <a href="mailto:helpdesk@neversettlesaga.com" className="text-brand-500 hover:text-brand-600 underline">
           helpdesk@neversettlesaga.com
         </a>
         .
@@ -56,21 +56,21 @@ export default function ShippingPage() {
 
       <PolicyH3>Typical production windows once specifications are confirmed</PolicyH3>
       <PolicyList>
-        <li><strong className="text-white">Lithophane lamps</strong> — 7 to 14 business days</li>
-        <li><strong className="text-white">Miniatures and 3D-printed items</strong> — 5 to 10 business days</li>
-        <li><strong className="text-white">Sublimation mugs, stickers, and planners</strong> — 3 to 7 business days</li>
-        <li><strong className="text-white">Custom or complex builds</strong> (e.g. retro TV lamps with electronics) — 2 to 4 weeks</li>
+        <li><strong className="text-ink">Lithophane lamps</strong> — 7 to 14 business days</li>
+        <li><strong className="text-ink">Miniatures and 3D-printed items</strong> — 5 to 10 business days</li>
+        <li><strong className="text-ink">Sublimation mugs, stickers, and planners</strong> — 3 to 7 business days</li>
+        <li><strong className="text-ink">Custom or complex builds</strong> (e.g. retro TV lamps with electronics) — 2 to 4 weeks</li>
       </PolicyList>
-      <p className="text-sm text-gray-400 italic">
+      <p className="text-sm text-ink-muted italic">
         These are guides, not guarantees. We&apos;ll always confirm a realistic timeline with you in writing before we start production.
       </p>
 
       <PolicyH2>Shipping time (after production)</PolicyH2>
       <p>Once your item is finished, packed, and dispatched:</p>
       <PolicyList>
-        <li><strong className="text-white">UK</strong> — typically 2 to 4 business days via Royal Mail Tracked or a courier service</li>
-        <li><strong className="text-white">EU</strong> — typically 5 to 10 business days</li>
-        <li><strong className="text-white">International (outside EU)</strong> — varies by destination; we&apos;ll confirm when you contact us</li>
+        <li><strong className="text-ink">UK</strong> — typically 2 to 4 business days via Royal Mail Tracked or a courier service</li>
+        <li><strong className="text-ink">EU</strong> — typically 5 to 10 business days</li>
+        <li><strong className="text-ink">International (outside EU)</strong> — varies by destination; we&apos;ll confirm when you contact us</li>
       </PolicyList>
 
       <PolicyH2>Shipping costs</PolicyH2>
@@ -89,7 +89,7 @@ export default function ShippingPage() {
       <PolicyH2>Lost or damaged parcels</PolicyH2>
       <p>
         If your parcel arrives damaged, or if tracking shows no movement for an unusually long period, contact us at{" "}
-        <a href="mailto:helpdesk@neversettlesaga.com" className="text-amber-400 hover:text-amber-300 underline">
+        <a href="mailto:helpdesk@neversettlesaga.com" className="text-brand-500 hover:text-brand-600 underline">
           helpdesk@neversettlesaga.com
         </a>{" "}
         with your order number and we&apos;ll investigate with the courier and put things right.
@@ -97,18 +97,18 @@ export default function ShippingPage() {
 
       <PolicyH2>Contact</PolicyH2>
       <p className="not-italic">
-        <strong className="text-white">Never Settle Saga</strong>
+        <strong className="text-ink">Never Settle Saga</strong>
         <br />
         262a Seven Sisters Road, London N4 2HY, United Kingdom
         <br />
-        <a href="mailto:helpdesk@neversettlesaga.com" className="text-amber-400 hover:text-amber-300 underline">
+        <a href="mailto:helpdesk@neversettlesaga.com" className="text-brand-500 hover:text-brand-600 underline">
           helpdesk@neversettlesaga.com
         </a>
       </p>
 
       <p className="pt-6 text-sm">
-        See also: <Link href="/returns" className="text-amber-400 hover:text-amber-300 underline">Returns Policy</Link>{" · "}
-        <Link href="/faq" className="text-amber-400 hover:text-amber-300 underline">FAQ</Link>
+        See also: <Link href="/returns" className="text-brand-500 hover:text-brand-600 underline">Returns Policy</Link>{" · "}
+        <Link href="/faq" className="text-brand-500 hover:text-brand-600 underline">FAQ</Link>
       </p>
     </PolicyLayout>
   );

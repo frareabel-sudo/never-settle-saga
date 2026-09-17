@@ -25,13 +25,13 @@ export default function ContactPage() {
   return (
     <>
       {/* Header */}
-      <section className="pt-24 lg:pt-28 pb-8 bg-charcoal-900">
+      <section className="pt-24 lg:pt-28 pb-8 bg-surface">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <FadeIn>
             <h1 className="font-display text-4xl sm:text-5xl font-bold mb-4">
               Get in <span className="text-gradient">Touch</span>
             </h1>
-            <p className="text-gray-400 text-lg max-w-2xl">
+            <p className="text-ink-muted text-lg max-w-2xl">
               Have a question, custom request, or just want to say hello?
               We&apos;d love to hear from you.
             </p>
@@ -39,7 +39,7 @@ export default function ContactPage() {
         </div>
       </section>
 
-      <section className="py-16 bg-charcoal-900">
+      <section className="py-16 bg-surface">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
             {/* Contact Info */}
@@ -71,14 +71,14 @@ export default function ContactPage() {
                       },
                     ].map((item) => (
                       <div key={item.title} className="flex gap-4">
-                        <div className="w-10 h-10 rounded-full bg-amber-500/10 flex items-center justify-center flex-shrink-0">
-                          <item.icon className="w-4 h-4 text-amber-400" />
+                        <div className="w-10 h-10 rounded-full bg-brand-500/10 flex items-center justify-center flex-shrink-0">
+                          <item.icon className="w-4 h-4 text-brand-500" />
                         </div>
                         <div>
                           <p className="font-medium text-sm">{item.title}</p>
-                          <p className="text-amber-400/80 text-sm">{item.text}</p>
+                          <p className="text-brand-600 text-sm">{item.text}</p>
                           {item.sub && (
-                            <p className="text-xs text-gray-500 mt-0.5">{item.sub}</p>
+                            <p className="text-xs text-ink-soft mt-0.5">{item.sub}</p>
                           )}
                         </div>
                       </div>
@@ -89,7 +89,7 @@ export default function ContactPage() {
                 {/* Socials */}
                 {socials.length > 0 && (
                   <div>
-                    <h3 className="font-display font-semibold text-sm uppercase tracking-wider text-amber-400/80 mb-4">
+                    <h3 className="font-display font-semibold text-sm uppercase tracking-wider text-brand-600 mb-4">
                       Follow Us
                     </h3>
                     <div className="flex gap-3">
@@ -100,7 +100,7 @@ export default function ContactPage() {
                           target="_blank"
                           rel="noopener noreferrer"
                           aria-label={s.label}
-                          className="w-10 h-10 rounded-full border border-charcoal-50 flex items-center justify-center text-gray-400 hover:text-amber-400 hover:border-amber-500/50 transition-colors"
+                          className="w-10 h-10 rounded-full border border-surface-line flex items-center justify-center text-ink-muted hover:text-brand-500 hover:border-brand-500/50 transition-colors"
                         >
                           <s.Icon className="w-4 h-4" />
                         </a>
@@ -110,9 +110,9 @@ export default function ContactPage() {
                 )}
 
                 {/* FAQ nudge */}
-                <div className="p-4 rounded-lg bg-charcoal-400/30 border border-charcoal-50/20">
+                <div className="p-4 rounded-lg bg-surface-card/30 border border-surface-line/20">
                   <h3 className="font-semibold text-sm mb-2">Common questions?</h3>
-                  <p className="text-sm text-gray-400 leading-relaxed">
+                  <p className="text-sm text-ink-muted leading-relaxed">
                     Check our FAQ for answers about shipping times, customisation
                     options, returns, and more.
                   </p>
@@ -122,16 +122,16 @@ export default function ContactPage() {
 
             {/* Contact Form */}
             <FadeIn direction="right" className="lg:col-span-2">
-              <div className="bg-charcoal-400/20 rounded-lg border border-charcoal-50/20 p-8">
+              <div className="bg-surface-card/20 rounded-lg border border-surface-line/20 p-8">
                 {submitted ? (
                   <div className="text-center py-12">
-                    <div className="w-16 h-16 rounded-full bg-amber-500/20 flex items-center justify-center mx-auto mb-4">
-                      <Send className="w-7 h-7 text-amber-400" />
+                    <div className="w-16 h-16 rounded-full bg-brand-500/20 flex items-center justify-center mx-auto mb-4">
+                      <Send className="w-7 h-7 text-brand-500" />
                     </div>
                     <h3 className="font-display text-2xl font-bold mb-2">
                       Message Sent!
                     </h3>
-                    <p className="text-gray-400">
+                    <p className="text-ink-muted">
                       Thanks for reaching out. We&apos;ll get back to you within 24 hours.
                     </p>
                   </div>
@@ -149,13 +149,13 @@ export default function ContactPage() {
                     >
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                         <div>
-                          <label className="block text-sm text-gray-400 mb-1.5">
+                          <label className="block text-sm text-ink-muted mb-1.5">
                             Name
                           </label>
                           <Input placeholder="Your name" required />
                         </div>
                         <div>
-                          <label className="block text-sm text-gray-400 mb-1.5">
+                          <label className="block text-sm text-ink-muted mb-1.5">
                             Email
                           </label>
                           <Input type="email" placeholder="your@email.com" required />
@@ -163,10 +163,10 @@ export default function ContactPage() {
                       </div>
 
                       <div>
-                        <label className="block text-sm text-gray-400 mb-1.5">
+                        <label className="block text-sm text-ink-muted mb-1.5">
                           Subject
                         </label>
-                        <select className="w-full h-10 px-3 rounded border border-charcoal-50 bg-charcoal-200 text-sm text-foreground focus:border-amber-500/50 focus:outline-none">
+                        <select className="w-full h-10 px-3 rounded border border-surface-line bg-surface-card text-sm text-foreground focus:border-brand-500/50 focus:outline-none">
                           <option>General Enquiry</option>
                           <option>Custom Order</option>
                           <option>Shipping Question</option>
@@ -177,7 +177,7 @@ export default function ContactPage() {
                       </div>
 
                       <div>
-                        <label className="block text-sm text-gray-400 mb-1.5">
+                        <label className="block text-sm text-ink-muted mb-1.5">
                           Message
                         </label>
                         <Textarea
