@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { motion, useScroll, useTransform } from "framer-motion";
 import { useRef } from "react";
@@ -12,7 +13,6 @@ import {
   Palette,
   PartyPopper,
   BookOpen,
-  ChevronDown,
   Users,
   Award,
   Heart,
@@ -21,7 +21,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ProductCard } from "@/components/product-card";
 import { FadeIn, StaggerContainer, StaggerItem } from "@/components/motion-wrapper";
-import { ParticleField } from "@/components/particles";
 import { Marquee } from "@/components/marquee";
 import { type Product, type Testimonial } from "@/lib/data";
 import { TestimonialsCarousel } from "@/components/testimonials-carousel";
@@ -78,112 +77,86 @@ export default function HomeClient({
     target: heroRef,
     offset: ["start start", "end start"],
   });
-  const heroOpacity = useTransform(scrollYProgress, [0, 0.8], [1, 0]);
   const heroScale = useTransform(scrollYProgress, [0, 1], [1, 1.1]);
-  const heroY = useTransform(scrollYProgress, [0, 1], [0, 150]);
 
   return (
     <>
-      {/* ===== HERO ===== */}
+      {/* ===== HERO =====
+          The product photo IS the hero: visitors see the range before they
+          scroll. Copy sits in a translucent strip pinned to the bottom of the
+          image rather than floating over the middle, because the artwork is
+          busy edge to edge and has no quiet area to hold type. */}
       <section
         ref={heroRef}
-        className="relative h-screen flex items-center justify-center overflow-hidden bg-surface"
+        className="relative pt-16 lg:pt-20 bg-surface"
       >
-        {/* Deep black base with subtle radial gradient */}
-        <motion.div
-          style={{ scale: heroScale }}
-          className="absolute inset-0"
-        >
-          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_rgba(156,66,33,0.07)_0%,_rgba(253,246,241,1)_70%)]" />
-          <div className="absolute inset-0 bg-noise opacity-40" />
-        </motion.div>
+        <div className="relative w-full">
+          {/* The artwork is 8:3 — ultra-wide. Held at its own ratio a phone gets
+              a ~140px sliver where nothing is legible, so narrow screens take a
+              taller box and crop the sides instead; the centre of the
+              composition survives and only the outer plants and t-shirt go. */}
+          <div className="relative w-full aspect-[3/2] sm:aspect-[21/9] lg:aspect-[8/3] overflow-hidden">
+            <motion.div style={{ scale: heroScale }} className="absolute inset-0">
+              <Image
+                src="/images/banners/new-products.jpg"
+                alt="Never Settle Saga product range: personalised mugs, tumblers, notebooks, tote bags, keyrings and gift boxes"
+                fill
+                priority
+                sizes="100vw"
+                className="object-cover object-center"
+              />
+            </motion.div>
+          </div>
 
-        {/* Ambient glow orbs */}
-        <div className="absolute top-1/3 left-1/4 w-[500px] h-[500px] bg-brand-500/[0.04] rounded-full blur-[150px] animate-pulse" />
-        <div className="absolute bottom-1/4 right-1/3 w-[400px] h-[400px] bg-brand-600/[0.03] rounded-full blur-[130px]" />
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-brand-500/[0.02] rounded-full blur-[200px]" />
+          {/* Copy strip sits UNDER the photo, never over it. An overlay was
+              tried and rejected: the products in this shot run along the
+              bottom of the frame, so any bottom-anchored band hides exactly
+              the keyrings, mugs and t-shirt the banner exists to show. */}
+          <div className="relative bg-surface border-t border-surface-line/30">
+            <div className="max-w-4xl mx-auto px-4 sm:px-6 py-5 sm:py-7 lg:py-9 text-center">
+              <motion.h1
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.7, delay: 0.2 }}
+                className="font-display text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight mb-2 sm:mb-3"
+              >
+                <span className="text-foreground">Never Settle </span>
+                <span className="bg-clip-text text-transparent bg-gradient-to-r from-brand-500 via-brand-500 to-brand-600">
+                  Saga
+                </span>
+              </motion.h1>
 
-        {/* Particle field */}
-        <ParticleField />
+              <motion.p
+                initial={{ opacity: 0, y: 16 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.7, delay: 0.35 }}
+                className="text-ink-muted text-sm sm:text-base lg:text-lg mb-5 sm:mb-6 max-w-2xl mx-auto"
+              >
+                Mugs, tumblers, planners, tote bags, keyrings and more — handcrafted
+                and personalised just for you.
+              </motion.p>
 
-        {/* Content */}
-        <motion.div
-          style={{ opacity: heroOpacity, y: heroY }}
-          className="relative z-10 text-center px-4 max-w-5xl mx-auto"
-        >
-          {/* Subtle top accent */}
-          <motion.div
-            initial={{ opacity: 0, width: 0 }}
-            animate={{ opacity: 1, width: 80 }}
-            transition={{ duration: 1, delay: 0.3 }}
-            className="h-[1px] bg-gradient-to-r from-transparent via-brand-500 to-transparent mx-auto mb-10"
-          />
-
-          {/* Main headline */}
-          <motion.h1
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.5 }}
-            className="font-display text-6xl sm:text-7xl md:text-8xl lg:text-9xl font-bold tracking-tighter leading-[0.9] mb-6"
-          >
-            <span className="text-foreground">Never Settle</span>
-            <br />
-            <span className="bg-clip-text text-transparent bg-gradient-to-r from-brand-500 via-brand-500 to-brand-600">
-              Saga
-            </span>
-          </motion.h1>
-
-          {/* Subheadline */}
-          <motion.p
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.8 }}
-            className="font-display text-lg sm:text-xl md:text-2xl font-light tracking-[0.15em] text-ink-muted mb-12"
-          >
-            Handcrafted. Personalised. Unforgettable.
-          </motion.p>
-
-          {/* CTA Buttons */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 1.1 }}
-            className="flex flex-col sm:flex-row gap-4 justify-center"
-          >
-            <Link href="/shop">
-              <Button size="xl" className="gap-3 group text-base px-10">
-                Shop Now
-                <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-              </Button>
-            </Link>
-            <Link href="/about">
-              <Button variant="outline" size="xl" className="text-base px-10">
-                Our Story
-              </Button>
-            </Link>
-          </motion.div>
-        </motion.div>
-
-        {/* Scroll indicator */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 1.8 }}
-          className="absolute bottom-8 left-1/2 -translate-x-1/2 z-10 flex flex-col items-center gap-2"
-        >
-          <span className="text-[10px] tracking-[0.3em] uppercase text-ink-soft">
-            Scroll
-          </span>
-          <motion.div
-            animate={{ y: [0, 8, 0] }}
-            transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
-          >
-            <ChevronDown className="w-4 h-4 text-brand-600" />
-          </motion.div>
-        </motion.div>
-
-        {/* Bottom fade */}
-        <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-surface to-transparent z-[2]" />
+              <motion.div
+                initial={{ opacity: 0, y: 16 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.7, delay: 0.5 }}
+                className="flex flex-col sm:flex-row gap-3 justify-center"
+              >
+                <Link href="/shop">
+                  <Button size="lg" className="w-full sm:w-auto gap-2 group px-8">
+                    Shop the Collection
+                    <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                  </Button>
+                </Link>
+                <Link href="/about">
+                  <Button variant="outline" size="lg" className="w-full sm:w-auto px-8">
+                    Our Story
+                  </Button>
+                </Link>
+              </motion.div>
+            </div>
+          </div>
+        </div>
       </section>
 
       {/* ===== MARQUEE ===== */}

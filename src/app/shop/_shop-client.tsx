@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { ProductCard } from "@/components/product-card";
 import { FadeIn } from "@/components/motion-wrapper";
+import { ProductsBanner } from "@/components/products-banner";
 import { type Product } from "@/lib/data";
 
 export default function ShopClient({
@@ -67,6 +68,9 @@ export default function ShopClient({
               lithophane lamps, engraved gifts, and 3D printed creations.
             </p>
           </FadeIn>
+
+          {/* Range showcase — same artwork as the home page, slimmed down */}
+          <ProductsBanner variant="strip" />
         </div>
       </section>
 
