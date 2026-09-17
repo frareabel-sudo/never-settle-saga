@@ -29,7 +29,7 @@ export function ProductsBanner({
   if (variant === "strip") {
     return (
       <FadeIn delay={0.15}>
-        <div className="mt-8 relative rounded-2xl overflow-hidden border border-surface-line/40 shadow-sm">
+        <div className="relative rounded-2xl overflow-hidden border border-surface-line/40 shadow-sm">
           <div className="relative h-[150px] sm:h-[220px] lg:h-[300px]">
             <Image
               src={BANNER_SRC}

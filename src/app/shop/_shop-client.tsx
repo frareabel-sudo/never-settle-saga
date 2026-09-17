@@ -59,8 +59,12 @@ export default function ShopClient({
       {/* Header */}
       <section className="pt-24 lg:pt-28 pb-8 bg-surface">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          {/* Range showcase above the title, same order as the home hero:
+              picture first, words underneath. */}
+          <ProductsBanner variant="strip" />
+
           <FadeIn>
-            <h1 className="font-display text-4xl sm:text-5xl font-bold mb-4">
+            <h1 className="font-display text-4xl sm:text-5xl font-bold mt-8 mb-4">
               The <span className="text-gradient">Collection</span>
             </h1>
             <p className="text-ink-muted text-lg max-w-2xl">
@@ -68,9 +72,6 @@ export default function ShopClient({
               lithophane lamps, engraved gifts, and 3D printed creations.
             </p>
           </FadeIn>
-
-          {/* Range showcase — same artwork as the home page, slimmed down */}
-          <ProductsBanner variant="strip" />
         </div>
       </section>
 
