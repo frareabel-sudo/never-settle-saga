@@ -4,6 +4,7 @@ import "./globals.css";
 import { Header } from "@/components/header";
 import { Footer } from "@/components/footer";
 import { Analytics } from "@/components/analytics";
+import { PromoBubble } from "@/components/promo-bubble";
 import { StructuredData } from "@/components/structured-data";
 
 const geistSans = localFont({
@@ -65,6 +66,7 @@ export default function RootLayout({
         <Header />
         <main className="min-h-screen">{children}</main>
         <Footer />
+        <PromoBubble />
       </body>
     </html>
   );
