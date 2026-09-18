@@ -14,7 +14,26 @@
  * tagging a product only `Organizer > Glasses` still shows it under Organizer.
  */
 
+/** Written when the app composes a name; `>` is the canonical form. */
 export const CATEGORY_SEPARATOR = ">";
+
+/**
+ * Accepted when reading a name back.
+ *
+ * The Command Centre may not allow every character in a category name, and that
+ * project could not be checked from here — so rather than betting the whole
+ * feature on one key, any of these splits a parent from a child. `/` is
+ * deliberately NOT here: real product categories contain it ("Salt / Pepper").
+ */
+const SEPARATORS = [">", "»", "::", "|"] as const;
+
+function splitOnAnySeparator(name: string): string[] {
+  let parts = [name];
+  for (const sep of SEPARATORS) {
+    parts = parts.flatMap((part) => part.split(sep));
+  }
+  return parts;
+}
 
 export type CategoryNode = {
   /** Full stored name, e.g. `Organizer > Glasses`. What products are tagged with. */
@@ -25,8 +44,7 @@ export type CategoryNode = {
 };
 
 function splitName(name: string): string[] {
-  return name
-    .split(CATEGORY_SEPARATOR)
+  return splitOnAnySeparator(name)
     .map((part) => part.trim())
     .filter(Boolean);
 }
