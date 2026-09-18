@@ -37,7 +37,18 @@ function deadlineLabel(): string {
   return end.toLocaleDateString("en-GB", { day: "numeric", month: "long" });
 }
 
-const DISMISS_KEY = "nss-promo-dismissed-v1";
+// v2 — was a permanent flag. Bumping the key also brings the bubble back for
+// anyone who closed the first version, which is the intended behaviour here.
+const DISMISS_KEY = "nss-promo-dismissed-v2";
+
+/**
+ * Closing hides the bubble for a week, not forever.
+ *
+ * The promotion runs for six weeks; a permanent dismissal meant someone who
+ * closed it on day one never saw it again, and a shop owner who closed it once
+ * while testing thinks the thing is broken.
+ */
+const DISMISS_DAYS = 7;
 
 function hasExpired(): boolean {
   const end = new Date(`${PROMO.endsAt}T23:59:59`);
@@ -54,7 +65,8 @@ export function PromoBubble() {
 
   useEffect(() => {
     try {
-      setDismissed(window.localStorage.getItem(DISMISS_KEY) === "1");
+      const until = Number(window.localStorage.getItem(DISMISS_KEY));
+      setDismissed(Number.isFinite(until) && until > Date.now());
     } catch {
       // Private mode or blocked storage — treat as "not dismissed" and carry on.
     }
@@ -71,7 +83,8 @@ export function PromoBubble() {
     setDismissed(true);
     setOpen(false);
     try {
-      window.localStorage.setItem(DISMISS_KEY, "1");
+      const until = Date.now() + DISMISS_DAYS * 24 * 60 * 60 * 1000;
+      window.localStorage.setItem(DISMISS_KEY, String(until));
     } catch {
       // Not remembering the dismissal is survivable; blocking the close is not.
     }
