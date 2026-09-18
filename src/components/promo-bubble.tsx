@@ -37,41 +37,14 @@ function deadlineLabel(): string {
   return end.toLocaleDateString("en-GB", { day: "numeric", month: "long" });
 }
 
-// v2 — was a permanent flag. Bumping the key also brings the bubble back for
-// anyone who closed the first version, which is the intended behaviour here.
-const DISMISS_KEY = "nss-promo-dismissed-v2";
-
-/**
- * Closing hides the bubble for a week, not forever.
- *
- * The promotion runs for six weeks; a permanent dismissal meant someone who
- * closed it on day one never saw it again, and a shop owner who closed it once
- * while testing thinks the thing is broken.
- */
-const DISMISS_DAYS = 7;
-
 function hasExpired(): boolean {
   const end = new Date(`${PROMO.endsAt}T23:59:59`);
   return Number.isFinite(end.getTime()) && Date.now() > end.getTime();
 }
 
 export function PromoBubble() {
-  // Never render on the server pass: the dismissal lives in localStorage, and
-  // rendering open-then-hidden would flash the bubble at someone who closed it.
-  const [ready, setReady] = useState(false);
-  const [dismissed, setDismissed] = useState(false);
   const [open, setOpen] = useState(false);
   const [copied, setCopied] = useState(false);
-
-  useEffect(() => {
-    try {
-      const until = Number(window.localStorage.getItem(DISMISS_KEY));
-      setDismissed(Number.isFinite(until) && until > Date.now());
-    } catch {
-      // Private mode or blocked storage — treat as "not dismissed" and carry on.
-    }
-    setReady(true);
-  }, []);
 
   useEffect(() => {
     if (!copied) return;
@@ -79,16 +52,6 @@ export function PromoBubble() {
     return () => clearTimeout(t);
   }, [copied]);
 
-  function dismiss() {
-    setDismissed(true);
-    setOpen(false);
-    try {
-      const until = Date.now() + DISMISS_DAYS * 24 * 60 * 60 * 1000;
-      window.localStorage.setItem(DISMISS_KEY, String(until));
-    } catch {
-      // Not remembering the dismissal is survivable; blocking the close is not.
-    }
-  }
 
   async function copyCode() {
     try {
@@ -99,7 +62,7 @@ export function PromoBubble() {
     }
   }
 
-  if (!PROMO.enabled || !ready || dismissed || hasExpired()) return null;
+  if (!PROMO.enabled || hasExpired()) return null;
 
   return (
     <div className="fixed bottom-4 right-4 z-40 print:hidden">
@@ -110,7 +73,7 @@ export function PromoBubble() {
           className="w-[280px] rounded-3xl bg-surface-card border border-surface-line shadow-xl p-5 text-center relative animate-in fade-in slide-in-from-bottom-2 duration-300"
         >
           <button
-            onClick={dismiss}
+            onClick={() => setOpen(false)}
             aria-label="Close offer"
             className="absolute top-3 right-3 text-ink-soft hover:text-foreground transition-colors"
           >
@@ -151,10 +114,10 @@ export function PromoBubble() {
         <button
           onClick={() => setOpen(true)}
           aria-label={`${PROMO.offer} — get the code`}
-          className="group relative w-[88px] h-[88px] rounded-full bg-brand-500 text-white shadow-lg hover:bg-brand-600 hover:scale-105 transition-all duration-300 flex flex-col items-center justify-center leading-tight"
+          className="group relative w-[72px] h-[72px] sm:w-[88px] sm:h-[88px] rounded-full bg-brand-500 text-white shadow-lg hover:bg-brand-600 hover:scale-105 transition-all duration-300 flex flex-col items-center justify-center leading-tight"
         >
           <Heart className="w-3 h-3 mb-0.5 fill-current opacity-80" />
-          <span className="font-display text-lg font-bold">10%</span>
+          <span className="font-display text-base sm:text-lg font-bold">10%</span>
           <span className="text-[10px] tracking-[0.2em] uppercase opacity-90">
             Off
           </span>
