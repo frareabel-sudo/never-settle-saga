@@ -8,6 +8,11 @@ import { ProductCard } from "@/components/product-card";
 import { FadeIn } from "@/components/motion-wrapper";
 import { ProductsBanner } from "@/components/products-banner";
 import { type Product } from "@/lib/data";
+import {
+  buildCategoryTree,
+  matchesCategory,
+  parentOf,
+} from "@/lib/category-tree";
 
 export default function ShopClient({
   products,
@@ -20,15 +25,31 @@ export default function ShopClient({
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState<"featured" | "price-asc" | "price-desc" | "rating">("featured");
 
+  const tree = useMemo(() => buildCategoryTree(categories), [categories]);
+
+  // The sub-row belongs to whichever top-level category is in play, whether the
+  // visitor clicked the parent or one of its children.
+  const activeRoot = useMemo(
+    () => (activeCategory === "All" ? null : parentOf(activeCategory)),
+    [activeCategory],
+  );
+  const subCategories = useMemo(
+    () => tree.find((n) => n.value === activeRoot)?.children ?? [],
+    [tree, activeRoot],
+  );
+
   const filtered = useMemo(() => {
     let result = products;
     if (activeCategory !== "All") {
-      // v3.33.4 — match against multi-category list, falling back to legacy single mirror.
-      result = result.filter((p) =>
-        Array.isArray(p.categories) && p.categories.length > 0
-          ? p.categories.includes(activeCategory)
-          : p.category === activeCategory,
-      );
+      // v3.33.4 — match against multi-category list, falling back to legacy
+      // single mirror. Selecting a parent also matches its subcategories.
+      result = result.filter((p) => {
+        const owned =
+          Array.isArray(p.categories) && p.categories.length > 0
+            ? p.categories
+            : [p.category];
+        return matchesCategory(owned, activeCategory);
+      });
     }
     if (searchQuery) {
       const q = searchQuery.toLowerCase();
@@ -79,19 +100,29 @@ export default function ShopClient({
       <section className="sticky top-16 lg:top-20 z-30 bg-surface-strip/95 backdrop-blur-md border-b border-surface-line/30">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
-            {/* Category tabs */}
+            {/* Category tabs — top level only; children live in the sub-row */}
             <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none w-full sm:w-auto">
-              {categories.map((cat) => (
+              <button
+                onClick={() => setActiveCategory("All")}
+                className={`px-4 py-2 text-sm rounded-full whitespace-nowrap transition-all ${
+                  activeCategory === "All"
+                    ? "bg-brand-500 text-white font-medium"
+                    : "bg-surface-card/50 text-ink-muted hover:text-foreground hover:bg-surface-card"
+                }`}
+              >
+                All
+              </button>
+              {tree.map((node) => (
                 <button
-                  key={cat}
-                  onClick={() => setActiveCategory(cat)}
+                  key={node.value}
+                  onClick={() => setActiveCategory(node.value)}
                   className={`px-4 py-2 text-sm rounded-full whitespace-nowrap transition-all ${
-                    activeCategory === cat
+                    activeRoot === node.value
                       ? "bg-brand-500 text-white font-medium"
                       : "bg-surface-card/50 text-ink-muted hover:text-foreground hover:bg-surface-card"
                   }`}
                 >
-                  {cat}
+                  {node.label}
                 </button>
               ))}
             </div>
@@ -121,6 +152,37 @@ export default function ShopClient({
               </select>
             </div>
           </div>
+
+          {/* Sub-row — only for a parent that actually has children, so the bar
+              keeps its height everywhere else. "All <parent>" returns to the
+              whole parent without leaving it. */}
+          {subCategories.length > 0 && activeRoot && (
+            <div className="flex gap-2 overflow-x-auto pt-3 pb-1 scrollbar-none border-t border-surface-line/20 mt-3">
+              <button
+                onClick={() => setActiveCategory(activeRoot)}
+                className={`px-3 py-1.5 text-xs rounded-full whitespace-nowrap transition-all ${
+                  activeCategory === activeRoot
+                    ? "bg-brand-500/15 text-brand-600 font-medium ring-1 ring-brand-500/30"
+                    : "text-ink-muted hover:text-foreground hover:bg-surface-card/60"
+                }`}
+              >
+                All {activeRoot}
+              </button>
+              {subCategories.map((sub) => (
+                <button
+                  key={sub.value}
+                  onClick={() => setActiveCategory(sub.value)}
+                  className={`px-3 py-1.5 text-xs rounded-full whitespace-nowrap transition-all ${
+                    activeCategory === sub.value
+                      ? "bg-brand-500/15 text-brand-600 font-medium ring-1 ring-brand-500/30"
+                      : "text-ink-muted hover:text-foreground hover:bg-surface-card/60"
+                  }`}
+                >
+                  {sub.label}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
       </section>
 
