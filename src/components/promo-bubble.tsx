@@ -15,13 +15,17 @@ import { Check, Copy, Heart, X } from "lucide-react";
  * retires it on its own, which is the point. A promo nobody remembers to remove
  * is worse than no promo.
  */
+// Wording tracks the launch artwork exactly. It has already changed twice
+// (sitewide -> sitewide + free shipping -> minimum spend); if the artwork moves
+// again, this object moves with it, or the site promises something the
+// checkout will refuse.
 const PROMO = {
   enabled: true,
   code: "WELCOME10",
   headline: "We're Open!",
-  offer: "10% off everything",
+  offer: "10% off orders over £25",
   /** Shown as small print; mirrors the launch artwork. */
-  note: "Free UK shipping on orders over £25",
+  note: "Enter the code at checkout",
   /** Local date, end of day. After this the bubble never renders. */
   endsAt: "2026-12-31",
 } as const;
