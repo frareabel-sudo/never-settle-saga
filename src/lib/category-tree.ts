@@ -35,6 +35,34 @@ function splitOnAnySeparator(name: string): string[] {
   return parts;
 }
 
+/**
+ * Flat categories that should sit under a parent, without renaming anything.
+ *
+ * The `>` convention below still works, but it requires typing a special name
+ * in the Command Centre, and that turned out to be the thing standing between
+ * the feature and the shop. This map needs no data change at all: the category
+ * keeps the plain name it already has, and the shop nests it on the way out.
+ *
+ * Keys and values are matched case-insensitively and ignore surrounding space,
+ * so "Can opener" and "can  Opener" both land under Keychains.
+ *
+ * To nest another one, add a line. To un-nest, delete it.
+ */
+const NESTED_UNDER: Record<string, string> = {
+  "lipsticks": "Keychains",
+  "can opener": "Keychains",
+  "can openers": "Keychains",
+  "desktop glasses": "Organizer",
+  "desk & makeup organiser": "Organizer",
+};
+
+function declaredParent(name: string): string | null {
+  // Collapse runs of whitespace too: a category typed with a double space
+  // should still find its parent.
+  const key = name.trim().toLowerCase().replace(/\s+/g, " ");
+  return NESTED_UNDER[key] ?? null;
+}
+
 export type CategoryNode = {
   /** Full stored name, e.g. `Organizer > Glasses`. What products are tagged with. */
   value: string;
@@ -49,15 +77,24 @@ function splitName(name: string): string[] {
     .filter(Boolean);
 }
 
-/** `Organizer > Glasses` -> `Organizer`; a top-level name maps to itself. */
+/** `Organizer > Glasses` -> `Organizer`; a mapped flat name -> its parent. */
 export function parentOf(name: string): string {
-  return splitName(name)[0] ?? name;
+  const parts = splitName(name);
+  if (parts.length > 1) return parts[0];
+  return declaredParent(name) ?? parts[0] ?? name;
 }
 
 /** True when `name` is `parent` itself or one of its descendants. */
 export function isUnder(name: string, parent: string): boolean {
   if (name === parent) return true;
   return parentOf(name) === parent && name !== parent;
+}
+
+/** Leaf label for a button: the child part, or the whole name if top-level. */
+function leafLabel(name: string): string {
+  const parts = splitName(name);
+  if (parts.length > 1) return parts.slice(1).join(` ${CATEGORY_SEPARATOR} `);
+  return name.trim();
 }
 
 /**
@@ -74,7 +111,8 @@ export function buildCategoryTree(categories: string[]): CategoryNode[] {
     const parts = splitName(name);
     if (parts.length === 0) continue;
 
-    const rootName = parts[0];
+    const mapped = parts.length === 1 ? declaredParent(name) : null;
+    const rootName = mapped ?? parts[0];
     let root = roots.get(rootName);
     if (!root) {
       root = { value: rootName, label: rootName, children: [] };
@@ -83,10 +121,9 @@ export function buildCategoryTree(categories: string[]): CategoryNode[] {
 
     // Deeper than two levels is flattened onto the second: the UI only has
     // room for one sub-row, and nothing in the catalogue nests further.
-    if (parts.length > 1) {
-      const childLabel = parts.slice(1).join(` ${CATEGORY_SEPARATOR} `);
+    if (parts.length > 1 || mapped) {
       if (!root.children.some((c) => c.value === name)) {
-        root.children.push({ value: name, label: childLabel, children: [] });
+        root.children.push({ value: name, label: leafLabel(name), children: [] });
       }
     }
   }
