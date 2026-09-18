@@ -24,11 +24,18 @@ const PROMO = {
   code: "WELCOME10",
   headline: "We're Open!",
   offer: "10% off orders over £25",
-  /** Shown as small print; mirrors the launch artwork. */
-  note: "Enter the code at checkout",
+  /** Second tier. Requires `freeShippingThresholdGBP` = 50 in store settings. */
+  note: "Spend £50+ and UK shipping is free too",
   /** Local date, end of day. After this the bubble never renders. */
-  endsAt: "2026-12-31",
+  endsAt: "2026-10-31",
 } as const;
+
+/** "31 October" — the deadline is written once, in `endsAt`, and shown from there. */
+function deadlineLabel(): string {
+  const end = new Date(`${PROMO.endsAt}T23:59:59`);
+  if (!Number.isFinite(end.getTime())) return "";
+  return end.toLocaleDateString("en-GB", { day: "numeric", month: "long" });
+}
 
 const DISMISS_KEY = "nss-promo-dismissed-v1";
 
@@ -122,6 +129,9 @@ export function PromoBubble() {
 
           <p className="text-[11px] text-ink-soft mt-2 leading-snug">
             {PROMO.note}
+          </p>
+          <p className="text-[11px] text-brand-600/80 mt-1">
+            Ends {deadlineLabel()}
           </p>
         </div>
       ) : (
