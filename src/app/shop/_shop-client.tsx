@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 import { Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -21,7 +22,24 @@ export default function ShopClient({
   products: Product[];
   categories: string[];
 }) {
+  const searchParams = useSearchParams();
   const [activeCategory, setActiveCategory] = useState("All");
+
+  // `/shop?category=Keychains` — the home page's category cards link in this
+  // way. An unknown name falls back to "All" rather than showing an empty grid,
+  // so a stale link is merely unhelpful instead of looking like a dead shop.
+  useEffect(() => {
+    const requested = searchParams.get("category");
+    if (!requested) return;
+    const known = categories.some(
+      (c) => c.toLowerCase() === requested.toLowerCase(),
+    );
+    setActiveCategory(
+      known
+        ? categories.find((c) => c.toLowerCase() === requested.toLowerCase())!
+        : "All",
+    );
+  }, [searchParams, categories]);
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState<"featured" | "price-asc" | "price-desc" | "rating">("featured");
 
