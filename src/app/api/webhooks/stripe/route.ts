@@ -4,6 +4,7 @@ import { getStripe, assertWebhookSecret } from "@/lib/stripe";
 import { getContainer, generateOrderNumber, deterministicOrderId } from "@/lib/cosmos";
 import { updateVariantStock, updateProductStock } from "@/lib/stock";
 import { sendEmail } from "@/lib/email/resend";
+import { getStoreSettings } from "@/lib/store-settings";
 import { renderOrderConfirmationEmail } from "@/lib/email/templates/order-confirmation";
 import { renderRefundConfirmationEmail } from "@/lib/email/templates/refund-confirmation";
 import Stripe from "stripe";
@@ -283,6 +284,16 @@ async function persistOrderFromSession(sessionId: string, rid = "-") {
   // order is already persisted so we must never throw here.
   if (email) {
     try {
+      // Personalised lines ask the customer for a photo over WhatsApp. The
+      // number lives in store settings so it can change without a deploy; a
+      // lookup failure must never cost us the confirmation email.
+      let waNumberForEmail = "";
+      try {
+        waNumberForEmail = (await getStoreSettings()).contact?.social?.whatsapp || "";
+      } catch (err) {
+        console.error(`[${rid}] store settings lookup for WhatsApp number failed:`, err);
+      }
+
       const { subject, html } = renderOrderConfirmationEmail({
         customerName: name,
         orderNumber,
@@ -302,6 +313,7 @@ async function persistOrderFromSession(sessionId: string, rid = "-") {
         total: (session.amount_total || 0) / 100,
         shippingAddress: formattedAddress,
         shippingName: recipientName,
+        whatsAppNumber: waNumberForEmail,
       });
       await sendEmail(rid, { to: email, subject, html });
     } catch (err) {

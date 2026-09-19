@@ -1,4 +1,5 @@
 import { BRAND, esc, firstName, gbp, shellHtml } from "./shared";
+import { PHOTO_GUIDANCE, orderNeedsPhoto, whatsAppLink } from "@/lib/personalisation";
 
 export interface OrderConfirmationInput {
   customerName: string;
@@ -19,6 +20,8 @@ export interface OrderConfirmationInput {
   total: number;
   shippingAddress: string;
   shippingName?: string;
+  /** From store settings; omitted or blank hides the photo block entirely. */
+  whatsAppNumber?: string;
 }
 
 function etaFor(method: string): string {
@@ -72,9 +75,41 @@ export function renderOrderConfirmationEmail(input: OrderConfirmationInput): {
         )}</td></tr>`
       : "";
 
+  // Photo request — only when the order actually contains something that needs
+  // artwork, and only when a WhatsApp number is configured. It sits directly
+  // under the greeting because it is the one thing the customer must DO; buried
+  // under the totals it would be missed.
+  const waLink = whatsAppLink(
+    input.whatsAppNumber,
+    `Order ${input.orderNumber} — here is my photo`,
+  );
+  const photoBlock =
+    waLink && orderNeedsPhoto(input.items)
+      ? `
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 20px 0;">
+      <tr><td style="background:${BRAND.card};border:1px solid ${BRAND.gold};border-radius:10px;padding:18px;">
+        <div style="color:${BRAND.gold};font-weight:700;font-size:16px;margin:0 0 6px 0;">${esc(PHOTO_GUIDANCE.heading)}</div>
+        <p style="margin:0 0 14px 0;color:${BRAND.fg};font-size:14px;">
+          Your order includes something we personalise with your own picture. Tap below and your order number is filled in for you — just attach the photo.
+        </p>
+        <a href="${waLink}" style="display:inline-block;background:${BRAND.gold};color:#1a1200;text-decoration:none;font-weight:700;padding:12px 22px;border-radius:999px;font-size:15px;">Send my photo on WhatsApp</a>
+        <p style="margin:14px 0 0 0;color:${BRAND.fg};font-size:13px;line-height:1.5;">
+          <strong>${esc(PHOTO_GUIDANCE.sendAsFile)}</strong>
+        </p>
+        <p style="margin:8px 0 0 0;color:${BRAND.muted};font-size:12px;line-height:1.5;">
+          ${esc(PHOTO_GUIDANCE.quality)} ${esc(PHOTO_GUIDANCE.minimum)}
+        </p>
+        <p style="margin:10px 0 0 0;color:${BRAND.muted};font-size:12px;">
+          We start making your order as soon as your photo arrives.
+        </p>
+      </td></tr>
+    </table>`
+      : "";
+
   const inner = `
     <h1 style="font-family:Georgia,'Times New Roman',serif;color:${BRAND.gold};font-size:22px;margin:0 0 6px 0;">Thank you for your order!</h1>
     <p style="margin:0 0 18px 0;color:${BRAND.fg};">Hi ${esc(firstName(input.customerName))}, we've received your order and are getting it ready.</p>
+    ${photoBlock}
 
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 18px 0;">
       <tr>

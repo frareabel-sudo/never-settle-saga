@@ -27,14 +27,26 @@ import { FadeIn } from "@/components/motion-wrapper";
 import { type Product } from "@/lib/data";
 import { formatPrice } from "@/lib/utils";
 import { useCart } from "@/hooks/use-cart";
+import { PHOTO_GUIDANCE, isPersonalisable, whatsAppLink } from "@/lib/personalisation";
 
 export default function ProductClient({
   product,
   related,
+  whatsAppNumber,
 }: {
   product: Product;
   related: Product[];
+  whatsAppNumber?: string;
 }) {
+  // Products we personalise with the customer's own picture. There is no
+  // upload yet: the photo is collected over WhatsApp after the order, so this
+  // block exists to set that expectation BEFORE the sale rather than surprise
+  // the customer in the confirmation email.
+  const needsPhoto = isPersonalisable(product);
+  const photoChatLink = whatsAppLink(
+    whatsAppNumber,
+    `Hi! I'd like a personalised ${product.name}`,
+  );
 
   const isComingSoon = product.status === "coming-soon";
   const [selectedImage, setSelectedImage] = useState(0);
@@ -444,6 +456,36 @@ export default function ProductClient({
                             onChange={(e) => setCustomText(e.target.value)}
                           />
                         </div>
+                      </div>
+                    )}
+
+                    {/* How the photo reaches us */}
+                    {needsPhoto && (
+                      <div className="mb-8 p-4 rounded-2xl bg-brand-50 border border-brand-200/60">
+                        <h3 className="font-semibold text-sm uppercase tracking-wider text-brand-600 mb-2">
+                          {PHOTO_GUIDANCE.heading}
+                        </h3>
+                        <p className="text-sm text-ink-muted mb-3 leading-relaxed">
+                          Order first — we&apos;ll email you straight away with a link to
+                          send your picture on WhatsApp, with your order number already
+                          filled in. We start making it as soon as your photo arrives.
+                        </p>
+                        <p className="text-sm text-foreground font-medium mb-2 leading-relaxed">
+                          {PHOTO_GUIDANCE.sendAsFile}
+                        </p>
+                        <p className="text-xs text-ink-soft leading-relaxed">
+                          {PHOTO_GUIDANCE.quality} {PHOTO_GUIDANCE.minimum}
+                        </p>
+                        {photoChatLink && (
+                          <a
+                            href={photoChatLink}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-2 mt-3 text-sm font-medium text-brand-600 hover:text-brand-700 underline underline-offset-4"
+                          >
+                            Questions? Message us on WhatsApp
+                          </a>
+                        )}
                       </div>
                     )}
 
