@@ -45,13 +45,14 @@ export function ProductCard({ product, index = 0 }: ProductCardProps) {
 
         {/* Status badge */}
         <div className="pointer-events-none absolute top-3 left-3 flex gap-2 z-30">
+          {/* No "Available" badge: it appeared on every purchasable product, so
+              it told the customer nothing and covered the artwork on all 50+
+              cards. Only badges that distinguish one product from another earn
+              a place on top of the photo. */}
           {isComingSoon ? (
             <Badge variant="amber">Coming Soon</Badge>
           ) : (
-            <>
-              <Badge variant="default">Available</Badge>
-              {product.badge && <Badge variant="amber">{product.badge}</Badge>}
-            </>
+            product.badge && <Badge variant="amber">{product.badge}</Badge>
           )}
         </div>
 
