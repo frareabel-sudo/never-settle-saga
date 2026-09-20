@@ -24,6 +24,7 @@ import { FadeIn, StaggerContainer, StaggerItem } from "@/components/motion-wrapp
 import { Marquee } from "@/components/marquee";
 import { type Product, type Testimonial } from "@/lib/data";
 import { buildCategoryTree, parentOf } from "@/lib/category-tree";
+import { isCorporate } from "@/lib/personalisation";
 import type { LucideIcon } from "lucide-react";
 import { TestimonialsCarousel } from "@/components/testimonials-carousel";
 
@@ -103,15 +104,30 @@ function buildCraftCards(categories: string[], products: Product[]) {
       image: images.get(node.value) ?? null,
     }))
     .filter((c) => c.count > 0)
-    .sort((a, b) => b.count - a.count)
+    // Busiest first, EXCEPT the corporate line, which is pinned to the front.
+    // A business buyer arrives looking for exactly one thing and should not
+    // have to hunt for it; everyone else scrolls past a single tile.
+    .sort((a, b) => {
+      const ca = isCorporate({ category: a.value });
+      const cb = isCorporate({ category: b.value });
+      if (ca !== cb) return ca ? -1 : 1;
+      return b.count - a.count;
+    })
     .slice(0, 6)
-    .map((c, i) => ({
-      ...c,
-      icon: CATEGORY_ICONS[c.title.trim().toLowerCase()] ?? Sparkles,
-      color: CARD_GRADIENTS[i % CARD_GRADIENTS.length],
-      desc:
-        c.count === 1 ? "1 piece, handmade" : `${c.count} pieces, handmade`,
-    }));
+    .map((c, i) => {
+      const corporate = isCorporate({ category: c.value });
+      return {
+        ...c,
+        corporate,
+        icon: CATEGORY_ICONS[c.title.trim().toLowerCase()] ?? Sparkles,
+        color: CARD_GRADIENTS[i % CARD_GRADIENTS.length],
+        desc: corporate
+          ? "Bulk orders · your logo"
+          : c.count === 1
+            ? "1 piece, handmade"
+            : `${c.count} pieces, handmade`,
+      };
+    });
 }
 
 export default function HomeClient({
@@ -239,9 +255,15 @@ export default function HomeClient({
             staggerDelay={0.08}
           >
             {craftCards.map((item) => (
-              <StaggerItem key={item.value}>
+              <StaggerItem key={item.value} className={item.corporate ? "col-span-2 lg:col-span-1" : undefined}>
                 <Link href={`/shop?category=${encodeURIComponent(item.value)}`}>
-                  <div className="group relative aspect-[4/3] rounded-2xl overflow-hidden border border-surface-line/20 hover:border-brand-500/30 transition-all duration-500">
+                  <div
+                    className={`group relative aspect-[4/3] rounded-2xl overflow-hidden border transition-all duration-500 ${
+                      item.corporate
+                        ? "border-brand-500/50 hover:border-brand-500 ring-1 ring-brand-500/20"
+                        : "border-surface-line/20 hover:border-brand-500/30"
+                    }`}
+                  >
                     {item.image ? (
                       <Image
                         src={item.image}
@@ -259,6 +281,12 @@ export default function HomeClient({
                     {/* Scrim — the name has to stay readable over any photo,
                         and product shots here are bright and busy. */}
                     <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/25 to-transparent" />
+
+                    {item.corporate && (
+                      <span className="absolute top-3 left-3 rounded-full bg-brand-500 text-white text-[10px] font-semibold uppercase tracking-wider px-2.5 py-1">
+                        For business
+                      </span>
+                    )}
 
                     <div className="absolute inset-x-0 bottom-0 p-4 sm:p-5">
                       <h3 className="font-display font-bold text-lg sm:text-xl text-white drop-shadow-sm leading-tight">
