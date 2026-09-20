@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { motion, useScroll, useTransform } from "framer-motion";
-import { useRef } from "react";
+import { useMemo, useRef } from "react";
 import {
   ArrowRight,
   Star,
@@ -23,55 +23,92 @@ import { ProductCard } from "@/components/product-card";
 import { FadeIn, StaggerContainer, StaggerItem } from "@/components/motion-wrapper";
 import { Marquee } from "@/components/marquee";
 import { type Product, type Testimonial } from "@/lib/data";
+import { buildCategoryTree, parentOf } from "@/lib/category-tree";
+import type { LucideIcon } from "lucide-react";
 import { TestimonialsCarousel } from "@/components/testimonials-carousel";
 
-const categoryCards = [
-  {
-    icon: Flame,
-    title: "3D FDM Printing",
-    desc: "Custom objects, functional parts, decorative pieces",
-    color: "from-orange-500/20 to-brand-500/5",
-  },
-  {
-    icon: Zap,
-    title: "Resin Printing",
-    desc: "Ultra-fine detail, smooth finish, miniatures & figurines",
-    color: "from-purple-500/20 to-brand-500/5",
-  },
-  {
-    icon: Sparkles,
-    title: "Lithophane Lamps",
-    desc: "Your photo embedded in light — coming soon",
-    color: "from-brand-500/20 to-brand-400/5",
-  },
-  {
-    icon: Palette,
-    title: "Miniatures",
-    desc: "Custom tabletop gaming miniatures, hand-finished",
-    color: "from-emerald-500/20 to-brand-500/5",
-  },
-  {
-    icon: PartyPopper,
-    title: "Kit Party",
-    desc: "DIY craft kits for parties — everything included",
-    color: "from-pink-500/20 to-brand-500/5",
-  },
-  {
-    icon: BookOpen,
-    title: "Agendas & Planners",
-    desc: "Laser-engraved personalised planners & agendas",
-    color: "from-blue-500/20 to-brand-500/5",
-  },
+/**
+ * Icons for the categories we know about. Anything else gets `Sparkles` —
+ * a new category should appear on the home page the day it is created, not
+ * whenever someone remembers to edit this file.
+ */
+const CATEGORY_ICONS: Record<string, LucideIcon> = {
+  keychains: Zap,
+  planners: BookOpen,
+  organizer: Palette,
+  "anti-stress": Heart,
+  colouring: Palette,
+  earrings: Sparkles,
+  "eco-bag": Award,
+  "home decor": Flame,
+  kits: PartyPopper,
+  articulados: Users,
+};
+
+const CARD_GRADIENTS = [
+  "from-orange-500/20 to-brand-500/5",
+  "from-purple-500/20 to-brand-500/5",
+  "from-brand-500/20 to-brand-400/5",
+  "from-emerald-500/20 to-brand-500/5",
+  "from-pink-500/20 to-brand-500/5",
+  "from-sky-500/20 to-brand-500/5",
 ];
+
+/**
+ * The six biggest real categories, by how many products are actually in them.
+ *
+ * This used to be a hand-written list of "disciplines" (Resin Printing,
+ * Miniatures, Kit Party…) that no longer matched a single category in the
+ * shop — the cards promised sections we do not stock and their Explore links
+ * filtered to nothing. Deriving from the live catalogue means the promise and
+ * the stock cannot drift apart again.
+ */
+function buildCraftCards(categories: string[], products: Product[]) {
+  const counts = new Map<string, number>();
+  for (const p of products) {
+    const owned =
+      Array.isArray(p.categories) && p.categories.length > 0
+        ? p.categories
+        : [p.category];
+    for (const c of owned) {
+      if (!c) continue;
+      const parent = parentOf(c);
+      counts.set(parent, (counts.get(parent) ?? 0) + 1);
+    }
+  }
+
+  return buildCategoryTree(categories)
+    .map((node) => ({
+      title: node.label,
+      value: node.value,
+      count: counts.get(node.value) ?? 0,
+    }))
+    .filter((c) => c.count > 0)
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 6)
+    .map((c, i) => ({
+      ...c,
+      icon: CATEGORY_ICONS[c.title.trim().toLowerCase()] ?? Sparkles,
+      color: CARD_GRADIENTS[i % CARD_GRADIENTS.length],
+      desc:
+        c.count === 1 ? "1 piece, handmade" : `${c.count} pieces, handmade`,
+    }));
+}
 
 export default function HomeClient({
   products,
   reviews,
+  categories,
 }: {
   products: Product[];
   reviews: Testimonial[];
+  categories: string[];
 }) {
   const featuredProducts = products.slice(0, 4);
+  const craftCards = useMemo(
+    () => buildCraftCards(categories, products),
+    [categories, products],
+  );
   const heroRef = useRef<HTMLDivElement>(null);
   const { scrollYProgress } = useScroll({
     target: heroRef,
@@ -174,7 +211,7 @@ export default function HomeClient({
               Our <span className="text-gradient">Craft</span>
             </h2>
             <p className="text-ink-soft max-w-xl mx-auto text-lg">
-              Six disciplines. One obsession.
+              Handmade, one piece at a time.
             </p>
           </FadeIn>
 
@@ -182,9 +219,9 @@ export default function HomeClient({
             className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5"
             staggerDelay={0.08}
           >
-            {categoryCards.map((item) => (
-              <StaggerItem key={item.title}>
-                <Link href={`/shop?category=${encodeURIComponent(item.title)}`}>
+            {craftCards.map((item) => (
+              <StaggerItem key={item.value}>
+                <Link href={`/shop?category=${encodeURIComponent(item.value)}`}>
                   <div className="group relative p-7 rounded-xl bg-surface-alt/60 border border-surface-line/10 hover:border-brand-500/25 transition-all duration-500 h-full overflow-hidden">
                     {/* Hover glow background */}
                     <div className={`absolute inset-0 bg-gradient-to-br ${item.color} opacity-0 group-hover:opacity-100 transition-opacity duration-500 rounded-xl`} />
