@@ -115,7 +115,10 @@ export default function ShopClient({
       </section>
 
       {/* Filters */}
-      <section className="sticky top-16 lg:top-20 z-30 bg-surface-strip/95 backdrop-blur-md border-b border-surface-line/30">
+      {/* z-40: the product cards' status badges are z-30, and equal z-index is
+          resolved by DOM order — the cards come later, so at z-30 the badges
+          painted straight over this bar as the grid scrolled under it. */}
+      <section className="sticky top-16 lg:top-20 z-40 bg-surface-strip/95 backdrop-blur-md border-b border-surface-line/30">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
             {/* Category tabs — top level only; children live in the sub-row */}

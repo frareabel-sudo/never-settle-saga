@@ -160,8 +160,10 @@ export default function ProductClient({
 
   return (
     <>
-      {/* Breadcrumb */}
-      <div className="bg-surface-strip border-b border-surface-line/20">
+      {/* Breadcrumb — pt clears the fixed header (h-16 / lg:h-20), which takes
+          no space in the flow. Without it the breadcrumb sits underneath and
+          shows through the header's translucent background. */}
+      <div className="pt-16 lg:pt-20 bg-surface-strip border-b border-surface-line/20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
           <div className="flex items-center gap-2 text-sm text-ink-soft">
             <Link href="/shop" className="hover:text-brand-500 transition-colors flex items-center gap-1">
