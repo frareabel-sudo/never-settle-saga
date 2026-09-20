@@ -5,6 +5,7 @@ import Image from "next/image";
 import { useEffect, useState } from "react";
 import { Trash2, Minus, Plus, ShoppingBag, Truck } from "lucide-react";
 import { useCart } from "@/hooks/use-cart";
+import { whatsAppLink } from "@/lib/personalisation";
 
 interface ShippingSettings {
   rates: Array<{ id: string; label: string; priceGBP: number }>;
@@ -18,16 +19,32 @@ export default function CartPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [shipping, setShipping] = useState<ShippingSettings | null>(null);
+  const [whatsAppNumber, setWhatsAppNumber] = useState("");
+  /**
+   * Set when the checkout is refused for stock. Keeps what the shop actually
+   * has so the customer can be offered a one-tap fix instead of a dead end.
+   */
+  const [stockIssue, setStockIssue] = useState<{
+    productId: string;
+    available: number;
+    requested: number;
+  } | null>(null);
 
   useEffect(() => {
     fetch("/api/settings/shipping")
       .then((r) => (r.ok ? r.json() : null))
       .then((d: ShippingSettings | null) => d && setShipping(d))
       .catch(() => { /* non-blocking; checkout still works */ });
+
+    fetch("/api/settings/contact")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => d?.contact?.social?.whatsapp && setWhatsAppNumber(d.contact.social.whatsapp))
+      .catch(() => { /* the bulk link just won't show */ });
   }, []);
 
   async function handleCheckout() {
     setError(null);
+    setStockIssue(null);
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       setError("Please enter a valid email address.");
       return;
@@ -51,7 +68,17 @@ export default function CartPage() {
       });
       const data = await res.json();
       if (!res.ok || !data.url) {
-        setError(data.error || "Unable to start checkout.");
+        // 409 with counts means we know exactly what went wrong and can say so.
+        // "Insufficient stock" on its own leaves the customer stuck.
+        if (res.status === 409 && typeof data.available === "number") {
+          setStockIssue({
+            productId: data.productId,
+            available: data.available,
+            requested: data.requested,
+          });
+        } else {
+          setError(data.error || "Unable to start checkout.");
+        }
         setLoading(false);
         return;
       }
@@ -206,6 +233,53 @@ export default function CartPage() {
               />
             </div>
             {error && <p className="text-sm text-red-400">{error}</p>}
+
+            {/* Stock shortage — say the number, fix it in one tap, and offer the
+                bulk route. A bare "Insufficient stock" sends a wholesale
+                customer away without ever talking to us. */}
+            {stockIssue && (() => {
+              const line = items.find((i) => i.product.id === stockIssue.productId);
+              const name = line?.product.name ?? "One of your items";
+              const bulkLink = whatsAppLink(
+                whatsAppNumber,
+                `Hi! I'd like to order ${stockIssue.requested} × ${name} — is that possible?`,
+              );
+              return (
+                <div className="rounded-lg border border-brand-500/50 bg-brand-500/5 p-3 space-y-2">
+                  <p className="text-sm text-foreground">
+                    <strong>{name}</strong> — we have{" "}
+                    <strong className="text-brand-600">{stockIssue.available}</strong>{" "}
+                    right now, and you asked for {stockIssue.requested}.
+                  </p>
+                  {line && stockIssue.available > 0 && (
+                    <button
+                      onClick={() => {
+                        updateLineQuantity(lineKey(line), stockIssue.available);
+                        setStockIssue(null);
+                      }}
+                      className="text-sm font-medium text-brand-600 hover:text-brand-700 underline underline-offset-4"
+                    >
+                      Change my order to {stockIssue.available} and carry on
+                    </button>
+                  )}
+                  {bulkLink && (
+                    <p className="text-xs text-ink-muted leading-relaxed">
+                      Need all {stockIssue.requested}?{" "}
+                      <a
+                        href={bulkLink}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-brand-600 underline underline-offset-4"
+                      >
+                        Message us on WhatsApp
+                      </a>{" "}
+                      — we make to order and handle larger and wholesale
+                      quantities all the time.
+                    </p>
+                  )}
+                </div>
+              );
+            })()}
             <button
               onClick={handleCheckout}
               disabled={loading}

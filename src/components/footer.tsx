@@ -2,17 +2,15 @@ import Image from "next/image";
 import Link from "next/link";
 import { Mail, MapPin } from "lucide-react";
 import { getStoreSettings } from "@/lib/store-settings";
+import { getCategories } from "@/lib/data";
+import { buildCategoryTree } from "@/lib/category-tree";
 import { buildSocials } from "@/components/social-icons";
 
+// Shop links are built from the live categories in the component below. They
+// used to be this same hand-written list of disciplines the home page carried
+// — none of which exist as categories — so every page footer linked to six
+// empty filters.
 const footerLinks = {
-  Shop: [
-    { label: "3D FDM Printing", href: "/shop?category=3D+FDM+Printing" },
-    { label: "Resin Printing", href: "/shop?category=Resin+Printing" },
-    { label: "Lithophane Lamps", href: "/shop?category=Lithophane+Lamps" },
-    { label: "Miniatures", href: "/shop?category=Miniatures" },
-    { label: "Kit Party", href: "/shop?category=Kit+Party" },
-    { label: "Agendas & Planners", href: "/shop?category=Agendas+%26+Planners" },
-  ],
   Company: [
     { label: "About Us", href: "/about" },
     { label: "Blog", href: "/blog" },
@@ -29,6 +27,24 @@ const footerLinks = {
 export async function Footer() {
   const settings = await getStoreSettings();
   const socials = buildSocials(settings.contact.social);
+
+  // Top-level categories, alphabetical, capped so the column stays a column.
+  let shopLinks: Array<{ label: string; href: string }> = [];
+  try {
+    shopLinks = buildCategoryTree(await getCategories())
+      .map((n) => ({
+        label: n.label,
+        href: `/shop?category=${encodeURIComponent(n.value)}`,
+      }))
+      .sort((a, b) => a.label.localeCompare(b.label))
+      .slice(0, 6);
+  } catch {
+    shopLinks = [];
+  }
+  const links = {
+    ...(shopLinks.length > 0 ? { Shop: shopLinks } : {}),
+    ...footerLinks,
+  };
   return (
     <footer className="bg-surface-dark border-t border-surface-line/10">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
@@ -70,13 +86,13 @@ export async function Footer() {
           </div>
 
           {/* Link columns */}
-          {Object.entries(footerLinks).map(([title, links]) => (
+          {Object.entries(links).map(([title, items]) => (
             <div key={title}>
               <h4 className="font-display font-semibold text-sm uppercase tracking-wider text-brand-300/90 mb-4">
                 {title}
               </h4>
               <ul className="space-y-2.5">
-                {links.map((link) => (
+                {items.map((link) => (
                   <li key={link.label}>
                     <Link
                       href={link.href}
