@@ -15,6 +15,10 @@
  * typing something in another app is a feature that does not ship.
  */
 
+function norm(s: string | undefined | null): string {
+  return (s || "").trim().toLowerCase().replace(/\s+/g, " ");
+}
+
 /** Matched case-insensitively against the product name. */
 const PERSONALISABLE_KEYWORDS = ["mug", "tumbler", "photo frame", "lithophane"];
 
@@ -24,8 +28,39 @@ const PERSONALISABLE_SLUGS: string[] = [];
 /** Category names whose products all take a customer photo. */
 const PERSONALISABLE_CATEGORIES = ["mugs", "photo gifts"];
 
-function norm(s: string | undefined | null): string {
-  return (s || "").trim().toLowerCase().replace(/\s+/g, " ");
+/**
+ * Corporate / wholesale lines, sold in fixed quantity tiers.
+ *
+ * These are a different promise from a photo mug: the customer buys "20 units"
+ * as a product (the tiers are variants, each with its own price and stock, so
+ * the minimum enforces itself), and afterwards sends a logo or wording rather
+ * than a family photo. Same WhatsApp mechanism, different words.
+ */
+const CORPORATE_CATEGORIES = [
+  "corporate gifts",
+  "brindes corporativos",
+  "wholesale",
+  "bulk",
+];
+const CORPORATE_KEYWORDS = ["corporate", "wholesale", "bulk order", "brinde"];
+
+export function isCorporate(product: {
+  name?: string;
+  category?: string;
+  categories?: string[];
+}): boolean {
+  const name = norm(product.name);
+  if (CORPORATE_KEYWORDS.some((k) => name.includes(k))) return true;
+  const cats = [
+    ...(product.categories ?? []),
+    ...(product.category ? [product.category] : []),
+  ].map(norm);
+  return cats.some((c) => CORPORATE_CATEGORIES.includes(c));
+}
+
+/** True when any line on the order is a corporate/bulk item. */
+export function orderNeedsBriefing(items: Array<{ name?: string }>): boolean {
+  return items.some((it) => isCorporate({ name: it.name }));
 }
 
 export function isPersonalisable(product: {
@@ -81,4 +116,23 @@ export const PHOTO_GUIDANCE = {
   quality:
     "Use the original photo straight from your camera roll. Please avoid screenshots and pictures saved from social media — they are too small to print well.",
   minimum: "Ideally at least 1500 × 1500 pixels.",
+} as const;
+
+/**
+ * Corporate equivalent of PHOTO_GUIDANCE.
+ *
+ * Mirrors the two lines every good corporate-gift listing opens with: what can
+ * be personalised, and that the details are agreed after the order rather than
+ * squeezed into a checkout field. Written once here so every product in the
+ * category says the same thing without the operator retyping it.
+ */
+export const CORPORATE_GUIDANCE = {
+  heading: "Make it yours",
+  what: "This product can be personalised with a name, a phrase or your logo.",
+  after:
+    "Once your order is placed, message us on WhatsApp with your order number and we'll make it exactly as you want it.",
+  artwork:
+    "For a logo, send the highest-quality file you have — a PNG with a transparent background or a vector (SVG, PDF, AI) prints best. Send it as a FILE, not as a photo.",
+  quantities:
+    "Sold in fixed quantities. Pick the tier that suits you — the larger the run, the lower the unit price.",
 } as const;

@@ -27,7 +27,13 @@ import { FadeIn } from "@/components/motion-wrapper";
 import { type Product } from "@/lib/data";
 import { formatPrice } from "@/lib/utils";
 import { useCart } from "@/hooks/use-cart";
-import { PHOTO_GUIDANCE, isPersonalisable, whatsAppLink } from "@/lib/personalisation";
+import {
+  CORPORATE_GUIDANCE,
+  PHOTO_GUIDANCE,
+  isCorporate,
+  isPersonalisable,
+  whatsAppLink,
+} from "@/lib/personalisation";
 
 export default function ProductClient({
   product,
@@ -42,10 +48,17 @@ export default function ProductClient({
   // upload yet: the photo is collected over WhatsApp after the order, so this
   // block exists to set that expectation BEFORE the sale rather than surprise
   // the customer in the confirmation email.
-  const needsPhoto = isPersonalisable(product);
+  // Corporate wins when a product is both: the logo briefing is the stronger
+  // instruction, and a bulk buyer is not sending a family photo.
+  const corporate = isCorporate(product);
+  const needsPhoto = !corporate && isPersonalisable(product);
   const photoChatLink = whatsAppLink(
     whatsAppNumber,
     `Hi! I'd like a personalised ${product.name}`,
+  );
+  const corporateChatLink = whatsAppLink(
+    whatsAppNumber,
+    `Hi! I'd like to ask about ${product.name} for corporate gifts`,
   );
 
   const isComingSoon = product.status === "coming-soon";
@@ -456,6 +469,39 @@ export default function ProductClient({
                             onChange={(e) => setCustomText(e.target.value)}
                           />
                         </div>
+                      </div>
+                    )}
+
+                    {/* Corporate / bulk — what can be personalised, and that
+                        the brief is agreed after the order rather than crammed
+                        into a checkout field. */}
+                    {corporate && (
+                      <div className="mb-8 p-4 rounded-2xl bg-brand-50 border border-brand-200/60">
+                        <h3 className="font-semibold text-sm uppercase tracking-wider text-brand-600 mb-2">
+                          {CORPORATE_GUIDANCE.heading}
+                        </h3>
+                        <p className="text-sm text-foreground font-medium mb-2 leading-relaxed">
+                          {CORPORATE_GUIDANCE.what}
+                        </p>
+                        <p className="text-sm text-ink-muted mb-3 leading-relaxed">
+                          {CORPORATE_GUIDANCE.after}
+                        </p>
+                        <p className="text-xs text-ink-soft leading-relaxed">
+                          {CORPORATE_GUIDANCE.artwork}
+                        </p>
+                        <p className="text-xs text-ink-soft mt-2 leading-relaxed">
+                          {CORPORATE_GUIDANCE.quantities}
+                        </p>
+                        {corporateChatLink && (
+                          <a
+                            href={corporateChatLink}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-2 mt-3 text-sm font-medium text-brand-600 hover:text-brand-700 underline underline-offset-4"
+                          >
+                            Questions before ordering? Message us on WhatsApp
+                          </a>
+                        )}
                       </div>
                     )}
 

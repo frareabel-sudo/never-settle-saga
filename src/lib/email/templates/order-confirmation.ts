@@ -1,5 +1,11 @@
 import { BRAND, esc, firstName, gbp, shellHtml } from "./shared";
-import { PHOTO_GUIDANCE, orderNeedsPhoto, whatsAppLink } from "@/lib/personalisation";
+import {
+  CORPORATE_GUIDANCE,
+  PHOTO_GUIDANCE,
+  orderNeedsBriefing,
+  orderNeedsPhoto,
+  whatsAppLink,
+} from "@/lib/personalisation";
 
 export interface OrderConfirmationInput {
   customerName: string;
@@ -83,8 +89,31 @@ export function renderOrderConfirmationEmail(input: OrderConfirmationInput): {
     input.whatsAppNumber,
     `Order ${input.orderNumber} — here is my photo`,
   );
+  const briefingLink = whatsAppLink(
+    input.whatsAppNumber,
+    `Order ${input.orderNumber} — here are my personalisation details`,
+  );
+
+  // Corporate lines ask for a logo and wording; personalised lines ask for a
+  // photo. Corporate takes precedence when an order somehow has both, because
+  // it is the larger commitment and the one with a deadline behind it.
+  const corporateBlock =
+    briefingLink && orderNeedsBriefing(input.items)
+      ? `
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 20px 0;">
+      <tr><td style="background:${BRAND.card};border:1px solid ${BRAND.gold};border-radius:10px;padding:18px;">
+        <div style="color:${BRAND.gold};font-weight:700;font-size:16px;margin:0 0 6px 0;">${esc(CORPORATE_GUIDANCE.heading)}</div>
+        <p style="margin:0 0 6px 0;color:${BRAND.fg};font-size:14px;"><strong>${esc(CORPORATE_GUIDANCE.what)}</strong></p>
+        <p style="margin:0 0 14px 0;color:${BRAND.fg};font-size:14px;">${esc(CORPORATE_GUIDANCE.after)}</p>
+        <a href="${briefingLink}" style="display:inline-block;background:${BRAND.gold};color:#1a1200;text-decoration:none;font-weight:700;padding:12px 22px;border-radius:999px;font-size:15px;">Send my details on WhatsApp</a>
+        <p style="margin:14px 0 0 0;color:${BRAND.muted};font-size:12px;line-height:1.5;">${esc(CORPORATE_GUIDANCE.artwork)}</p>
+        <p style="margin:10px 0 0 0;color:${BRAND.muted};font-size:12px;">We start production as soon as your artwork is approved.</p>
+      </td></tr>
+    </table>`
+      : "";
+
   const photoBlock =
-    waLink && orderNeedsPhoto(input.items)
+    !corporateBlock && waLink && orderNeedsPhoto(input.items)
       ? `
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 20px 0;">
       <tr><td style="background:${BRAND.card};border:1px solid ${BRAND.gold};border-radius:10px;padding:18px;">
@@ -109,6 +138,7 @@ export function renderOrderConfirmationEmail(input: OrderConfirmationInput): {
   const inner = `
     <h1 style="font-family:Georgia,'Times New Roman',serif;color:${BRAND.gold};font-size:22px;margin:0 0 6px 0;">Thank you for your order!</h1>
     <p style="margin:0 0 18px 0;color:${BRAND.fg};">Hi ${esc(firstName(input.customerName))}, we've received your order and are getting it ready.</p>
+    ${corporateBlock}
     ${photoBlock}
 
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 18px 0;">
