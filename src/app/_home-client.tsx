@@ -77,11 +77,30 @@ function buildCraftCards(categories: string[], products: Product[]) {
     }
   }
 
+  // One picture per category, taken from the first product filed under it that
+  // actually has a photo. No separate artwork to commission and nothing to keep
+  // in sync: photograph a product, the tile updates itself.
+  const images = new Map<string, string>();
+  for (const p of products) {
+    const src = p.images?.[0];
+    if (!src) continue;
+    const owned =
+      Array.isArray(p.categories) && p.categories.length > 0
+        ? p.categories
+        : [p.category];
+    for (const c of owned) {
+      if (!c) continue;
+      const parent = parentOf(c);
+      if (!images.has(parent)) images.set(parent, src);
+    }
+  }
+
   return buildCategoryTree(categories)
     .map((node) => ({
       title: node.label,
       value: node.value,
       count: counts.get(node.value) ?? 0,
+      image: images.get(node.value) ?? null,
     }))
     .filter((c) => c.count > 0)
     .sort((a, b) => b.count - a.count)
@@ -216,30 +235,36 @@ export default function HomeClient({
           </FadeIn>
 
           <StaggerContainer
-            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5"
+            className="grid grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-5"
             staggerDelay={0.08}
           >
             {craftCards.map((item) => (
               <StaggerItem key={item.value}>
                 <Link href={`/shop?category=${encodeURIComponent(item.value)}`}>
-                  <div className="group relative p-7 rounded-xl bg-surface-alt/60 border border-surface-line/10 hover:border-brand-500/25 transition-all duration-500 h-full overflow-hidden">
-                    {/* Hover glow background */}
-                    <div className={`absolute inset-0 bg-gradient-to-br ${item.color} opacity-0 group-hover:opacity-100 transition-opacity duration-500 rounded-xl`} />
-
-                    {/* Content */}
-                    <div className="relative">
-                      <div className="w-12 h-12 rounded-xl bg-brand-500/10 flex items-center justify-center mb-5 group-hover:bg-brand-500/20 group-hover:shadow-lg group-hover:shadow-brand-500/10 transition-all duration-500">
-                        <item.icon className="w-6 h-6 text-brand-500" />
+                  <div className="group relative aspect-[4/3] rounded-2xl overflow-hidden border border-surface-line/20 hover:border-brand-500/30 transition-all duration-500">
+                    {item.image ? (
+                      <Image
+                        src={item.image}
+                        alt={item.title}
+                        fill
+                        sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 400px"
+                        className="object-cover transition-transform duration-700 group-hover:scale-105"
+                      />
+                    ) : (
+                      <div className="absolute inset-0 bg-surface-alt flex items-center justify-center">
+                        <item.icon className="w-10 h-10 text-brand-500/40" />
                       </div>
-                      <h3 className="font-display font-semibold text-lg mb-2 text-foreground group-hover:text-brand-600 transition-colors duration-300">
+                    )}
+
+                    {/* Scrim — the name has to stay readable over any photo,
+                        and product shots here are bright and busy. */}
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/25 to-transparent" />
+
+                    <div className="absolute inset-x-0 bottom-0 p-4 sm:p-5">
+                      <h3 className="font-display font-bold text-lg sm:text-xl text-white drop-shadow-sm leading-tight">
                         {item.title}
                       </h3>
-                      <p className="text-sm text-ink-soft group-hover:text-ink-muted transition-colors duration-300">
-                        {item.desc}
-                      </p>
-                      <div className="mt-4 flex items-center gap-1 text-xs text-brand-500/0 group-hover:text-brand-600 transition-all duration-300 translate-y-2 group-hover:translate-y-0">
-                        Explore <ArrowRight className="w-3 h-3" />
-                      </div>
+                      <p className="text-xs text-white/80 mt-0.5">{item.desc}</p>
                     </div>
                   </div>
                 </Link>
