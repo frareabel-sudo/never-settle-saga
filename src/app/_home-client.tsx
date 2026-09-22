@@ -25,7 +25,7 @@ import { Marquee } from "@/components/marquee";
 import { type Product, type Testimonial } from "@/lib/data";
 import { buildCategoryTree, parentOf } from "@/lib/category-tree";
 import { isCorporate } from "@/lib/personalisation";
-import { activeSeason, daysLeft } from "@/lib/seasonal";
+import { activeSeason, daysLeft, isSeasonCategory } from "@/lib/seasonal";
 import type { LucideIcon } from "lucide-react";
 import { TestimonialsCarousel } from "@/components/testimonials-carousel";
 
@@ -68,7 +68,7 @@ const CARD_GRADIENTS = [
 function buildCraftCards(
   categories: string[],
   products: Product[],
-  seasonCategory?: string,
+  seasonCategory?: (name: string) => boolean,
 ) {
   const counts = new Map<string, number>();
   for (const p of products) {
@@ -114,8 +114,8 @@ function buildCraftCards(
     // have to hunt for it; everyone else scrolls past a single tile.
     .sort((a, b) => {
       // Season first (it expires), then corporate, then busiest.
-      const sa = seasonCategory && a.value.trim().toLowerCase() === seasonCategory;
-      const sb = seasonCategory && b.value.trim().toLowerCase() === seasonCategory;
+      const sa = !!seasonCategory && seasonCategory(a.value);
+      const sb = !!seasonCategory && seasonCategory(b.value);
       if (sa !== sb) return sa ? -1 : 1;
       const ca = isCorporate({ category: a.value });
       const cb = isCorporate({ category: b.value });
@@ -155,17 +155,23 @@ export default function HomeClient({
   const season = useMemo(() => activeSeason(), []);
   const seasonProducts = useMemo(() => {
     if (!season) return [];
-    const wanted = season.category.trim().toLowerCase();
     return products
       .filter((p) => {
         const owned =
           Array.isArray(p.categories) && p.categories.length > 0
             ? p.categories
             : [p.category];
-        return owned.some((c) => (c ?? "").trim().toLowerCase() === wanted);
+        return owned.some((c) => isSeasonCategory(season, c ?? ""));
       })
       .slice(0, 4);
   }, [season, products]);
+
+  // Link to whichever spelling the shop actually uses, not the ideal one.
+  const seasonHref = useMemo(() => {
+    if (!season) return null;
+    const match = categories.find((c) => isSeasonCategory(season, c));
+    return `/shop?category=${encodeURIComponent(match ?? season.category)}`;
+  }, [season, categories]);
 
   const craftCards = useMemo(
     () =>
@@ -173,7 +179,7 @@ export default function HomeClient({
         categories,
         products,
         seasonProducts.length > 0 && season
-          ? season.category.trim().toLowerCase()
+          ? (name: string) => isSeasonCategory(season, name)
           : undefined,
       ),
     [categories, products, season, seasonProducts],
@@ -295,7 +301,7 @@ export default function HomeClient({
 
             <FadeIn delay={0.3}>
               <div className="mt-10 text-center">
-                <Link href={`/shop?category=${encodeURIComponent(season.category)}`}>
+                <Link href={seasonHref ?? "/shop"}>
                   <Button size="lg" className="gap-2 group">
                     {season.cta}
                     <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />

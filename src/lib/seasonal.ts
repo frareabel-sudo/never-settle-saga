@@ -16,6 +16,12 @@ export type Season = {
   key: string;
   /** Category name in the shop. The band is hidden while it has no products. */
   category: string;
+  /**
+   * Other spellings the category might carry. The shop's categories are typed
+   * by hand in the Command Centre, and this one arrived as "Hallowen" — the
+   * feature should not sit dark waiting for a typo to be corrected.
+   */
+  aliases?: string[];
   eyebrow: string;
   title: string;
   blurb: string;
@@ -29,6 +35,7 @@ const SEASONS: Season[] = [
   {
     key: "halloween-2026",
     category: "Halloween",
+    aliases: ["hallowen", "hallowe'en", "halloweeen"],
     eyebrow: "Limited time",
     title: "Halloween",
     blurb:
@@ -55,4 +62,11 @@ export function activeSeason(now: Date = new Date()): Season | null {
 export function daysLeft(season: Season, now: Date = new Date()): number {
   const to = new Date(`${season.endsAt}T23:59:59`).getTime();
   return Math.max(0, Math.ceil((to - now.getTime()) / 86400000));
+}
+
+/** Does a shop category belong to this season, however it was typed? */
+export function isSeasonCategory(season: Season, category: string): boolean {
+  const c = (category || "").trim().toLowerCase().replace(/\s+/g, " ");
+  if (c === season.category.trim().toLowerCase()) return true;
+  return (season.aliases ?? []).some((a) => a.toLowerCase() === c);
 }
