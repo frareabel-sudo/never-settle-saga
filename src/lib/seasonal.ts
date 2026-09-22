@@ -25,6 +25,12 @@ export type Season = {
   eyebrow: string;
   title: string;
   blurb: string;
+  /**
+   * Artwork that already carries its own heading and tagline. When present the
+   * band shows it INSTEAD of `title`/`blurb` — printing our heading over or
+   * beside the image would say everything twice.
+   */
+  banner?: { src: string; alt: string; width: number; height: number };
   cta: string;
   /** Inclusive, local dates. */
   startsAt: string;
@@ -41,6 +47,12 @@ const SEASONS: Season[] = [
     blurb:
       "Spooky little things, handmade to order and personalised with any name. Order early — everything is made by hand, and the last few days before the 31st go quickly.",
     cta: "Shop Halloween",
+    banner: {
+      src: "/images/banners/halloween-collection.jpg",
+      alt: "Never Settle Saga Halloween Collection: skeleton, ghost, pumpkin, bat and spider candy bowls, and a ghost candle holder",
+      width: 1983,
+      height: 793,
+    },
     startsAt: "2026-09-20",
     endsAt: "2026-10-31",
   },

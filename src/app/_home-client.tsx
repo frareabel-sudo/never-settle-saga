@@ -278,15 +278,43 @@ export default function HomeClient({
       {season && seasonProducts.length > 0 && (
         <section className="py-16 bg-surface-alt border-y border-surface-line/20">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <FadeIn className="text-center mb-10">
-              <p className="inline-flex items-center gap-2 rounded-full bg-brand-500 text-white text-[11px] font-semibold uppercase tracking-[0.2em] px-3 py-1 mb-4">
+            <FadeIn className="text-center mb-6">
+              {/* The countdown is the one thing the artwork cannot carry, so it
+                  stays even when there is a banner. */}
+              <p className="inline-flex items-center gap-2 rounded-full bg-brand-500 text-white text-[11px] font-semibold uppercase tracking-[0.2em] px-3 py-1">
                 {season.eyebrow} · {daysLeft(season)} days left
               </p>
-              <h2 className="font-display text-4xl sm:text-5xl font-bold mb-3">
-                <span className="text-gradient">{season.title}</span>
-              </h2>
-              <p className="text-ink-muted max-w-2xl mx-auto">{season.blurb}</p>
             </FadeIn>
+
+            {season.banner ? (
+              <FadeIn delay={0.1} className="mb-10">
+                <Link
+                  href={seasonHref ?? "/shop"}
+                  aria-label={season.cta}
+                  className="group block rounded-2xl overflow-hidden border border-surface-line/40 shadow-sm hover:shadow-lg transition-shadow duration-500"
+                >
+                  {/* Held at the artwork's own ratio so nothing is cropped: the
+                      product names and prices are printed into it and a crop
+                      would cut them off mid-word. */}
+                  <div className="relative w-full aspect-[2.5/1]">
+                    <Image
+                      src={season.banner.src}
+                      alt={season.banner.alt}
+                      fill
+                      sizes="(max-width: 1280px) 100vw, 1280px"
+                      className="object-cover object-center transition-transform duration-700 group-hover:scale-[1.02]"
+                    />
+                  </div>
+                </Link>
+              </FadeIn>
+            ) : (
+              <FadeIn className="text-center mb-10">
+                <h2 className="font-display text-4xl sm:text-5xl font-bold mb-3">
+                  <span className="text-gradient">{season.title}</span>
+                </h2>
+                <p className="text-ink-muted max-w-2xl mx-auto">{season.blurb}</p>
+              </FadeIn>
+            )}
 
             <StaggerContainer
               className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6"
