@@ -25,6 +25,7 @@ import { Marquee } from "@/components/marquee";
 import { type Product, type Testimonial } from "@/lib/data";
 import { buildCategoryTree, parentOf } from "@/lib/category-tree";
 import { isCorporate } from "@/lib/personalisation";
+import { activeSeason, daysLeft } from "@/lib/seasonal";
 import type { LucideIcon } from "lucide-react";
 import { TestimonialsCarousel } from "@/components/testimonials-carousel";
 
@@ -64,7 +65,11 @@ const CARD_GRADIENTS = [
  * filtered to nothing. Deriving from the live catalogue means the promise and
  * the stock cannot drift apart again.
  */
-function buildCraftCards(categories: string[], products: Product[]) {
+function buildCraftCards(
+  categories: string[],
+  products: Product[],
+  seasonCategory?: string,
+) {
   const counts = new Map<string, number>();
   for (const p of products) {
     const owned =
@@ -108,6 +113,10 @@ function buildCraftCards(categories: string[], products: Product[]) {
     // A business buyer arrives looking for exactly one thing and should not
     // have to hunt for it; everyone else scrolls past a single tile.
     .sort((a, b) => {
+      // Season first (it expires), then corporate, then busiest.
+      const sa = seasonCategory && a.value.trim().toLowerCase() === seasonCategory;
+      const sb = seasonCategory && b.value.trim().toLowerCase() === seasonCategory;
+      if (sa !== sb) return sa ? -1 : 1;
       const ca = isCorporate({ category: a.value });
       const cb = isCorporate({ category: b.value });
       if (ca !== cb) return ca ? -1 : 1;
@@ -140,9 +149,34 @@ export default function HomeClient({
   categories: string[];
 }) {
   const featuredProducts = products.slice(0, 4);
+  // Seasonal band. Renders only inside its date window AND only when the
+  // category actually has products — an empty "Halloween" heading is worse
+  // than no Halloween at all.
+  const season = useMemo(() => activeSeason(), []);
+  const seasonProducts = useMemo(() => {
+    if (!season) return [];
+    const wanted = season.category.trim().toLowerCase();
+    return products
+      .filter((p) => {
+        const owned =
+          Array.isArray(p.categories) && p.categories.length > 0
+            ? p.categories
+            : [p.category];
+        return owned.some((c) => (c ?? "").trim().toLowerCase() === wanted);
+      })
+      .slice(0, 4);
+  }, [season, products]);
+
   const craftCards = useMemo(
-    () => buildCraftCards(categories, products),
-    [categories, products],
+    () =>
+      buildCraftCards(
+        categories,
+        products,
+        seasonProducts.length > 0 && season
+          ? season.category.trim().toLowerCase()
+          : undefined,
+      ),
+    [categories, products, season, seasonProducts],
   );
   const heroRef = useRef<HTMLDivElement>(null);
   const { scrollYProgress } = useScroll({
@@ -233,6 +267,45 @@ export default function HomeClient({
 
       {/* ===== MARQUEE ===== */}
       <Marquee />
+
+      {/* ===== SEASONAL BAND ===== */}
+      {season && seasonProducts.length > 0 && (
+        <section className="py-16 bg-surface-alt border-y border-surface-line/20">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <FadeIn className="text-center mb-10">
+              <p className="inline-flex items-center gap-2 rounded-full bg-brand-500 text-white text-[11px] font-semibold uppercase tracking-[0.2em] px-3 py-1 mb-4">
+                {season.eyebrow} · {daysLeft(season)} days left
+              </p>
+              <h2 className="font-display text-4xl sm:text-5xl font-bold mb-3">
+                <span className="text-gradient">{season.title}</span>
+              </h2>
+              <p className="text-ink-muted max-w-2xl mx-auto">{season.blurb}</p>
+            </FadeIn>
+
+            <StaggerContainer
+              className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6"
+              staggerDelay={0.08}
+            >
+              {seasonProducts.map((p) => (
+                <StaggerItem key={p.id}>
+                  <ProductCard product={p} />
+                </StaggerItem>
+              ))}
+            </StaggerContainer>
+
+            <FadeIn delay={0.3}>
+              <div className="mt-10 text-center">
+                <Link href={`/shop?category=${encodeURIComponent(season.category)}`}>
+                  <Button size="lg" className="gap-2 group">
+                    {season.cta}
+                    <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                  </Button>
+                </Link>
+              </div>
+            </FadeIn>
+          </div>
+        </section>
+      )}
 
       {/* ===== CATEGORIES ===== */}
       <section className="py-28 bg-surface relative">
