@@ -22,6 +22,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { canRenderSwatches, resolveSwatch, swatchStyle } from "@/lib/colours";
 import { ProductCard } from "@/components/product-card";
 import { FadeIn } from "@/components/motion-wrapper";
 import { type Product } from "@/lib/data";
@@ -405,7 +406,10 @@ export default function ProductClient({
                     {/* Variant selectors */}
                     {hasVariants && product.options && (
                       <div className="mb-6 space-y-4">
-                        {product.options.map((opt) => (
+                        {product.options.map((opt) => {
+                          // Colour options render as squares; everything else keeps text pills.
+                          const asSwatches = canRenderSwatches(opt.name, opt.values);
+                          return (
                           <div key={opt.name}>
                             <div className="flex items-center justify-between mb-2">
                               <h3 className="font-semibold text-sm uppercase tracking-wider text-brand-600">
@@ -422,6 +426,43 @@ export default function ProductClient({
                                 const available = isOptionAvailable(opt.name, val);
                                 const selected = selectedOptions[opt.name] === val;
                                 return (
+                                  asSwatches ? (
+                                  <button
+                                    key={val}
+                                    type="button"
+                                    disabled={!available}
+                                    onClick={() =>
+                                      setSelectedOptions((prev) => ({
+                                        ...prev,
+                                        [opt.name]: val,
+                                      }))
+                                    }
+                                    title={available ? val : `${val} — unavailable`}
+                                    aria-label={`${opt.name}: ${val}`}
+                                    aria-pressed={selected}
+                                    className={`relative h-11 w-11 rounded-lg p-1 transition ${
+                                      selected
+                                        ? "ring-2 ring-brand-500 ring-offset-2 ring-offset-surface"
+                                        : available
+                                        ? "ring-1 ring-surface-line/60 hover:ring-brand-500/60"
+                                        : "ring-1 ring-surface-line/30 cursor-not-allowed"
+                                    }`}
+                                  >
+                                    {/* Inset hairline keeps white and cream swatches visible on the cream page. */}
+                                    <span
+                                      className={`block h-full w-full rounded-md ring-1 ring-inset ring-black/10 ${
+                                        available ? "" : "opacity-40"
+                                      }`}
+                                      style={swatchStyle(resolveSwatch(val)!)}
+                                    />
+                                    {!available && (
+                                      <span aria-hidden className="absolute inset-0 flex items-center justify-center">
+                                        {/* Full-strength line with a white halo so it reads on black and on white. */}
+                                        <span className="h-[2px] w-8 rotate-45 rounded-full bg-ink shadow-[0_0_0_1px_rgba(255,255,255,0.9)]" />
+                                      </span>
+                                    )}
+                                  </button>
+                                  ) : (
                                   <button
                                     key={val}
                                     type="button"
@@ -442,11 +483,13 @@ export default function ProductClient({
                                   >
                                     {val}
                                   </button>
+                                  )
                                 );
                               })}
                             </div>
                           </div>
-                        ))}
+                          );
+                        })}
                       </div>
                     )}
 
