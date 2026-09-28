@@ -83,10 +83,14 @@ function buildCraftCards(
     }
   }
 
-  // One picture per category, taken from the first product filed under it that
-  // actually has a photo. No separate artwork to commission and nothing to keep
-  // in sync: photograph a product, the tile updates itself.
-  const images = new Map<string, string>();
+  // Candidate pictures per category. No separate artwork to commission and
+  // nothing to keep in sync: photograph a product, the tile updates itself.
+  //
+  // Candidates are ranked by how many categories the product is filed under.
+  // A product tagged into twenty categories says nothing about any one of them,
+  // so it must never out-rank a product filed under a single category — that is
+  // what put the same rose-bear photo on all six tiles.
+  const candidates = new Map<string, { src: string; breadth: number }[]>();
   for (const p of products) {
     const src = p.images?.[0];
     if (!src) continue;
@@ -94,19 +98,24 @@ function buildCraftCards(
       Array.isArray(p.categories) && p.categories.length > 0
         ? p.categories
         : [p.category];
+    const breadth = owned.filter(Boolean).length;
     for (const c of owned) {
       if (!c) continue;
       const parent = parentOf(c);
-      if (!images.has(parent)) images.set(parent, src);
+      const list = candidates.get(parent);
+      if (list) list.push({ src, breadth });
+      else candidates.set(parent, [{ src, breadth }]);
     }
   }
+  candidates.forEach((list) => list.sort((a, b) => a.breadth - b.breadth));
 
   return buildCategoryTree(categories)
     .map((node) => ({
       title: node.label,
       value: node.value,
       count: counts.get(node.value) ?? 0,
-      image: images.get(node.value) ?? null,
+      // Filled in after sorting, once the running order is known.
+      image: null as string | null,
     }))
     .filter((c) => c.count > 0)
     // Busiest first, EXCEPT the corporate line, which is pinned to the front.
@@ -123,8 +132,15 @@ function buildCraftCards(
       return b.count - a.count;
     })
     .slice(0, 6)
-    .map((c, i) => {
+    // Images are picked here, after the running order is settled, so each tile
+    // can claim a photo no earlier tile took. Two tiles showing the same product
+    // is what the visitor reads as "this grid is broken".
+    .map((c, i, all) => {
       const corporate = isCorporate({ category: c.value });
+      const list = candidates.get(c.value) ?? [];
+      const taken = new Set(all.slice(0, i).map((x) => x.image).filter(Boolean));
+      const pick = list.find((x) => !taken.has(x.src)) ?? list[0];
+      c.image = pick?.src ?? null;
       return {
         ...c,
         corporate,
