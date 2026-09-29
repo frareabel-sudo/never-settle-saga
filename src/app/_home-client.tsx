@@ -227,7 +227,7 @@ export default function HomeClient({
             <motion.div style={{ scale: heroScale }} className="absolute inset-0">
               <Image
                 src="/images/banners/new-products.jpg"
-                alt="Never Settle Saga product range: personalised mugs, tumblers, notebooks, tote bags, keyrings and gift boxes"
+                alt="DreamCraft Studio product range: personalised mugs, tumblers, notebooks, tote bags, keyrings and gift boxes"
                 fill
                 priority
                 sizes="100vw"
@@ -248,9 +248,9 @@ export default function HomeClient({
                 transition={{ duration: 0.7, delay: 0.2 }}
                 className="font-display text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight mb-2 sm:mb-3"
               >
-                <span className="text-foreground">Never Settle </span>
+                <span className="text-foreground">DreamCraft </span>
                 <span className="bg-clip-text text-transparent bg-gradient-to-r from-brand-500 via-brand-500 to-brand-600">
-                  Saga
+                  Studio
                 </span>
               </motion.h1>
 

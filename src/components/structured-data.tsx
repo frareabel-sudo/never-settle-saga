@@ -4,7 +4,7 @@ export function StructuredData() {
     "@type": "Organization",
     name: "Never Settle Saga",
     url: "https://neversettlesaga.com",
-    logo: "https://neversettlesaga.com/images/LOGO.jpg",
+    logo: "https://neversettlesaga.com/images/dreamcraft-logo.jpg",
     email: "helpdesk@neversettlesaga.com",
     address: {
       "@type": "PostalAddress",

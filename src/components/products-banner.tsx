@@ -8,7 +8,7 @@ import { FadeIn } from "@/components/motion-wrapper";
 
 const BANNER_SRC = "/images/banners/new-products.jpg";
 const BANNER_ALT =
-  "Never Settle Saga product range: personalised mugs, tumblers, notebooks, tote bags, keyrings and gift boxes";
+  "DreamCraft Studio product range: personalised mugs, tumblers, notebooks, tote bags, keyrings and gift boxes";
 
 /**
  * Wide showcase band for the current product range.

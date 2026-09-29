@@ -53,14 +53,14 @@ export async function Footer() {
           <div className="lg:col-span-2">
             <Link href="/" className="flex items-center gap-2 mb-4">
               <Image
-                src="/images/LOGO.jpg"
-                alt="Never Settle Saga"
+                src="/images/dreamcraft-logo.jpg"
+                alt="DreamCraft Studio"
                 width={40}
                 height={40}
-                className="rounded"
+                className="rounded-full"
               />
               <span className="font-display text-lg font-bold text-ink-inverse">
-                Never Settle <span className="text-brand-300">Saga</span>
+                DreamCraft <span className="text-brand-300">Studio</span>
               </span>
             </Link>
             <p className="text-ink-inverse/70 text-sm leading-relaxed mb-6 max-w-sm">

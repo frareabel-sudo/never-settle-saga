@@ -41,18 +41,24 @@ export function Header() {
             {/* Logo */}
             <Link href="/" className="flex items-center gap-3 group">
               <Image
-                src="/images/LOGO.jpg"
-                alt="Never Settle Saga"
+                src="/images/dreamcraft-logo.jpg"
+                alt="DreamCraft Studio"
                 width={44}
                 height={44}
-                className="rounded-lg group-hover:shadow-lg group-hover:shadow-brand-500/30 transition-all duration-300"
+                // The badge is circular inside a square file: rounded-full crops
+                // the pale corners instead of parking them on the cream header.
+                className="rounded-full ring-1 ring-surface-line/60 group-hover:shadow-lg group-hover:shadow-brand-500/30 transition-all duration-300"
               />
-              <div className="hidden sm:flex flex-col leading-none">
-                <span className="font-display text-[11px] font-bold tracking-[0.25em] uppercase text-brand-600">
-                  Never Settle
+              {/* The name shows from the narrowest screen up: most visitors
+                  arrive from Instagram, where they have just read what we make,
+                  and a bare badge here throws that away. The trade line needs
+                  more room, so it waits for lg. */}
+              <div className="flex flex-col leading-none">
+                <span className="font-display text-base sm:text-lg font-bold tracking-tight text-foreground">
+                  DreamCraft Studio
                 </span>
-                <span className="font-display text-lg font-bold tracking-tight text-foreground -mt-0.5">
-                  Saga
+                <span className="hidden lg:block font-display text-[10px] font-semibold tracking-[0.16em] uppercase text-brand-600 mt-1">
+                  3D · Resin · Sublimation · Stationery
                 </span>
               </div>
             </Link>
@@ -132,12 +138,18 @@ export function Header() {
                 className="mb-12"
               >
                 <Image
-                  src="/images/LOGO.jpg"
-                  alt="Never Settle Saga"
-                  width={64}
-                  height={64}
-                  className="rounded-xl shadow-lg shadow-brand-500/20"
+                  src="/images/dreamcraft-logo.jpg"
+                  alt="DreamCraft Studio"
+                  width={72}
+                  height={72}
+                  className="rounded-full shadow-lg shadow-brand-500/20 mx-auto"
                 />
+                <p className="mt-3 text-center font-display text-lg font-bold tracking-tight text-foreground">
+                  DreamCraft Studio
+                </p>
+                <p className="mt-1 text-center font-display text-[10px] font-semibold tracking-[0.16em] uppercase text-brand-600">
+                  3D · Resin · Sublimation · Stationery
+                </p>
               </motion.div>
 
               {/* Nav links */}

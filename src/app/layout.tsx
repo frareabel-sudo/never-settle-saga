@@ -19,34 +19,51 @@ const geistMono = localFont({
 });
 
 export const metadata: Metadata = {
+  // Trading name is DreamCraft Studio; the domain stays neversettlesaga.com.
+  // Lithophane lamps were dropped from every line below: the catalogue has no
+  // such category, and a title promising stock we do not carry is the same
+  // drift that once made the homepage category cards link to nothing.
   title: {
-    default: "Never Settle Saga | Premium Handmade Gifts & Lithophane Lamps",
-    template: "%s | Never Settle Saga",
+    default: "DreamCraft Studio | Personalised Gifts Handmade in London",
+    template: "%s | DreamCraft Studio",
   },
   description:
-    "London-based studio crafting premium lithophane lamps, laser-engraved personalised gifts, 3D printed products, and custom photo gifts. Handmade with love, designed to last.",
+    "London studio making personalised gifts by hand: 3D printed pieces, resin charms, sublimation mugs and tote bags, and custom stationery. Made to order, made to keep.",
   keywords: [
-    "lithophane lamps",
     "personalised gifts",
-    "laser engraved",
     "3D printed gifts",
-    "custom photo gifts",
+    "resin keyrings",
+    "sublimation mugs",
+    "custom stationery",
     "handmade London",
-    "premium gifts UK",
+    "personalised gifts UK",
   ],
   openGraph: {
-    title: "Never Settle Saga | Premium Handmade Gifts",
+    title: "DreamCraft Studio | Personalised Gifts Handmade in London",
     description:
-      "Handmade lithophane lamps, laser-engraved gifts & 3D printed creations from London.",
+      "3D printed, resin, sublimation and stationery — personalised by hand in London.",
     url: "https://neversettlesaga.com",
-    siteName: "Never Settle Saga",
+    siteName: "DreamCraft Studio",
     locale: "en_GB",
     type: "website",
+    // Without this the link preview in WhatsApp and Instagram was text only,
+    // while twitter.card already promised a large image. 1200x630 is the size
+    // both expect; anything else gets cropped by somebody.
+    images: [
+      {
+        url: "https://neversettlesaga.com/images/og-share.jpg",
+        width: 1200,
+        height: 630,
+        alt: "DreamCraft Studio — sublimation, 3D, resin and stationery, personalised by hand in London",
+      },
+    ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Never Settle Saga",
-    description: "Premium handmade gifts from London.",
+    title: "DreamCraft Studio | Personalised Gifts, London",
+    description:
+      "3D printed, resin, sublimation and stationery — personalised by hand in London.",
+    images: ["https://neversettlesaga.com/images/og-share.jpg"],
   },
   robots: { index: true, follow: true },
 };
