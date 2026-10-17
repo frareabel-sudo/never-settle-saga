@@ -275,12 +275,6 @@ export async function POST(request: NextRequest) {
           text: { maximum_length: 255 },
         },
       ],
-      // Stripe substitutes {CHECKOUT_SESSION_ID} server-side, giving the
-      // PaymentIntent a stable backref to its parent session for the
-      // payment_intent.succeeded handler.
-      payment_intent_data: {
-        metadata: { checkout_session_id: "{CHECKOUT_SESSION_ID}" },
-      },
       metadata: {
         customer_email: email,
         client_ip: ip,

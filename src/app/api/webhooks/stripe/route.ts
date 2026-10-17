@@ -661,7 +661,12 @@ export async function POST(request: NextRequest) {
         // Async payment methods (SEPA, bank redirects) finalize here AFTER
         // checkout.session.completed fires with payment_status="unpaid".
         const pi = event.data.object as Stripe.PaymentIntent;
-        let sessionId: string | undefined = pi.metadata?.checkout_session_id;
+        // PaymentIntents created before the checkout fix carry the literal
+        // "{CHECKOUT_SESSION_ID}" here — Stripe only substitutes that template
+        // in success_url — so anything that isn't a real cs_ id is ignored and
+        // the session is looked up by payment intent instead.
+        const metaSessionId = pi.metadata?.checkout_session_id;
+        let sessionId: string | undefined = metaSessionId?.startsWith("cs_") ? metaSessionId : undefined;
         if (!sessionId) {
           try {
             const { data } = await getStripe().checkout.sessions.list({ payment_intent: pi.id, limit: 1 });
