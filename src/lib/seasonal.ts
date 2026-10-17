@@ -49,7 +49,7 @@ const SEASONS: Season[] = [
     cta: "Shop Halloween",
     banner: {
       src: "/images/banners/halloween-collection.jpg",
-      alt: "Never Settle Saga Halloween Collection: skeleton, ghost, pumpkin, bat and spider candy bowls, and a ghost candle holder",
+      alt: "DreamCraft Studio Halloween Collection: skeleton, ghost, pumpkin, bat and spider candy bowls, and a ghost candle holder",
       width: 1983,
       height: 793,
     },

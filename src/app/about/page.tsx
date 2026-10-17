@@ -35,7 +35,7 @@ export default function AboutPage() {
           <FadeIn delay={0.4}>
             <p className="text-xl text-ink-muted leading-relaxed max-w-2xl mx-auto">
               We are Abel and Jennifer — a couple who turned creativity into craft,
-              and craft into Never Settle Saga. From our London studio, every piece
+              and craft into DreamCraft Studio. From our London studio, every piece
               we make carries a little piece of us. We don&apos;t do mass production.
               We do meaning.
             </p>
@@ -136,7 +136,7 @@ export default function AboutPage() {
                     <h3 className="font-display text-xl font-bold mb-1">Jennifer</h3>
                     <p className="text-brand-600 text-sm mb-3">Co-Founder &amp; Creative Director</p>
                     <p className="text-sm text-ink-muted leading-relaxed">
-                      The heart and voice of Never Settle Saga. Jennifer handles creative
+                      The heart and voice of DreamCraft Studio. Jennifer handles creative
                       direction, brand identity, customer experience, and the personal
                       touches that turn a product into a gift. Every handwritten note
                       in your order? That&apos;s her.

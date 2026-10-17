@@ -1,4 +1,4 @@
-# Never Settle Saga
+# DreamCraft Studio
 
 Premium handmade lithophane lamps, laser-engraved personalised gifts, 3D printed products, and custom photo gifts. Based in London.
 

@@ -68,7 +68,7 @@ export function ProductCard({ product, index = 0 }: ProductCardProps) {
                   e.preventDefault();
                   const email = prompt("Enter your email to be notified when this launches:");
                   if (email) {
-                    window.location.href = `mailto:helpdesk@neversettlesaga.com?subject=Notify Me: ${product.name}&body=Please notify me at ${email} when ${product.name} becomes available.`;
+                    window.location.href = `mailto:helpdesk@dreamcraftstudio.co.uk?subject=Notify Me: ${product.name}&body=Please notify me at ${email} when ${product.name} becomes available.`;
                   }
                 }}
               >

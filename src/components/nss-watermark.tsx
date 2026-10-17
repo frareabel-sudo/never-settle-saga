@@ -7,8 +7,8 @@ const RAW_SVG = (label: string) => `<svg xmlns="http://www.w3.org/2000/svg" view
   <rect width="400" height="400" fill="#F6E9DF" fill-opacity="1"/>
   <rect x="0" y="0" width="400" height="400" fill="#9C4221" fill-opacity="0.06"/>
   <g transform="translate(200 170)" text-anchor="middle" font-family="Georgia, 'Times New Roman', serif">
-    <text y="0" fill="#9C4221" fill-opacity="0.85" font-size="48" font-weight="700" letter-spacing="4">NSS</text>
-    <text y="36" fill="#2A201B" fill-opacity="0.6" font-size="14" letter-spacing="3">NEVER SETTLE SAGA</text>
+    <text y="0" fill="#9C4221" fill-opacity="0.85" font-size="40" font-weight="700" letter-spacing="2">DreamCraft</text>
+    <text y="36" fill="#2A201B" fill-opacity="0.6" font-size="14" letter-spacing="3">STUDIO</text>
     <line x1="-70" y1="60" x2="70" y2="60" stroke="#9C4221" stroke-opacity="0.4" stroke-width="1"/>
     <text y="96" fill="#6B5A4E" fill-opacity="0.9" font-size="16" font-style="italic">${escapeXml(label)}</text>
   </g>

@@ -1,12 +1,12 @@
 import { Resend } from "resend";
 
-// Sender identity. Switch to "orders@neversettlesaga.com" once the domain
-// is verified in the Resend dashboard (Domains → Add → verify DNS). Until
-// then, fall back to the safe noreply@ address to avoid hard bounces.
+// Sender identity. dreamcraftstudio.co.uk must be verified in the Resend
+// dashboard (Domains → Add → verify DNS) before this sends, and sales@ must
+// be a real mailbox so customer replies reach someone.
 export const EMAIL_FROM =
-  process.env.RESEND_FROM || "Never Settle Saga <sales@neversettlesaga.com>";
+  process.env.RESEND_FROM || "DreamCraft Studio <sales@dreamcraftstudio.co.uk>";
 export const EMAIL_FROM_FALLBACK =
-  "Never Settle Saga <noreply@neversettlesaga.com>";
+  "DreamCraft Studio <noreply@dreamcraftstudio.co.uk>";
 
 let client: Resend | null = null;
 function getClient(): Resend | null {

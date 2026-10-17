@@ -2,4 +2,4 @@ User-agent: *
 Allow: /
 Disallow: /api/
 
-Sitemap: https://neversettlesaga.com/sitemap.xml
+Sitemap: https://dreamcraftstudio.co.uk/sitemap.xml

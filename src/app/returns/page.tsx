@@ -3,12 +3,12 @@ import Link from "next/link";
 import { PolicyLayout, PolicyH2, PolicyList } from "@/components/policy-layout";
 
 export const metadata: Metadata = {
-  title: "Returns Policy — Never Settle Saga",
+  title: "Returns Policy",
   description:
     "Our returns policy for handmade and personalised products, including faulty or damaged items and your statutory rights.",
 };
 
-const LAST_UPDATED = "1 May 2026";
+const LAST_UPDATED = "17 October 2026";
 
 export default function ReturnsPage() {
   return (
@@ -19,14 +19,14 @@ export default function ReturnsPage() {
     >
       <PolicyH2>The short version</PolicyH2>
       <p>
-        Because every NSS product is made to order and personalised to your specifications, we are unable to accept returns or offer refunds for change of mind on personalised or custom-made items. This is consistent with UK consumer law (Consumer Contracts Regulations 2013, Regulation 28), which exempts goods made to a consumer&apos;s specifications or clearly personalised from the standard 14-day right to cancel.
+        Because every DreamCraft Studio product is made to order and personalised to your specifications, we are unable to accept returns or offer refunds for change of mind on personalised or custom-made items. This is consistent with UK consumer law (Consumer Contracts Regulations 2013, Regulation 28), which exempts goods made to a consumer&apos;s specifications or clearly personalised from the standard 14-day right to cancel.
       </p>
       <p>
         However, you are always entitled to a refund, replacement, or repair if your item is faulty, damaged on arrival, or not as described. Those rights are protected by the Consumer Rights Act 2015 and we honour them in full.
       </p>
 
       <PolicyH2>What counts as &ldquo;made to order / personalised&rdquo;</PolicyH2>
-      <p>Effectively all NSS products fall into this category, including but not limited to:</p>
+      <p>Effectively all our products fall into this category, including but not limited to:</p>
       <PolicyList>
         <li>Lithophane lamps with custom images</li>
         <li>Miniatures printed to your specification</li>
@@ -49,8 +49,8 @@ export default function ReturnsPage() {
       </PolicyList>
       <p>
         In any of these cases, contact us at{" "}
-        <a href="mailto:helpdesk@neversettlesaga.com" className="text-brand-500 hover:text-brand-600 underline">
-          helpdesk@neversettlesaga.com
+        <a href="mailto:helpdesk@dreamcraftstudio.co.uk" className="text-brand-500 hover:text-brand-600 underline">
+          helpdesk@dreamcraftstudio.co.uk
         </a>{" "}
         within 30 days of receiving your order, with:
       </p>
@@ -90,12 +90,12 @@ export default function ReturnsPage() {
 
       <PolicyH2>Contact</PolicyH2>
       <p className="not-italic">
-        <strong className="text-ink">Never Settle Saga</strong>
+        <strong className="text-ink">DreamCraft Studio</strong>
         <br />
         262a Seven Sisters Road, London N4 2HY, United Kingdom
         <br />
-        <a href="mailto:helpdesk@neversettlesaga.com" className="text-brand-500 hover:text-brand-600 underline">
-          helpdesk@neversettlesaga.com
+        <a href="mailto:helpdesk@dreamcraftstudio.co.uk" className="text-brand-500 hover:text-brand-600 underline">
+          helpdesk@dreamcraftstudio.co.uk
         </a>
       </p>
 

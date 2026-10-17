@@ -1,7 +1,7 @@
 export const BRAND = {
-  name: "Never Settle Saga",
-  site: "https://neversettlesaga.com",
-  contact: "helpdesk@neversettlesaga.com",
+  name: "DreamCraft Studio",
+  site: "https://dreamcraftstudio.co.uk",
+  contact: "helpdesk@dreamcraftstudio.co.uk",
   instagram: "https://instagram.com/neversettlesaga",
   gold: "#D4A020",
   goldLight: "#E8B843",
@@ -53,7 +53,7 @@ export function footerHtml(): string {
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:${BRAND.bg};">
       <tr>
         <td align="center" style="padding:28px 24px 36px 24px;color:${BRAND.muted};font-family:Arial,Helvetica,sans-serif;font-size:12px;line-height:1.7;">
-          <a href="${BRAND.site}" style="color:${BRAND.gold};text-decoration:none;">neversettlesaga.com</a>
+          <a href="${BRAND.site}" style="color:${BRAND.gold};text-decoration:none;">dreamcraftstudio.co.uk</a>
           &nbsp;·&nbsp;
           <a href="mailto:${BRAND.contact}" style="color:${BRAND.gold};text-decoration:none;">${BRAND.contact}</a>
           &nbsp;·&nbsp;

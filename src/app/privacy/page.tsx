@@ -3,23 +3,23 @@ import Link from "next/link";
 import { PolicyLayout, PolicyH2, PolicyH3, PolicyList } from "@/components/policy-layout";
 
 export const metadata: Metadata = {
-  title: "Privacy Policy — Never Settle Saga",
+  title: "Privacy Policy",
   description:
-    "How Never Settle Saga collects, uses, and protects your personal data, in accordance with UK GDPR and EU GDPR.",
+    "How DreamCraft Studio collects, uses, and protects your personal data, in accordance with UK GDPR and EU GDPR.",
 };
 
-const LAST_UPDATED = "1 May 2026";
+const LAST_UPDATED = "17 October 2026";
 
 export default function PrivacyPage() {
   return (
     <PolicyLayout
       title="Privacy Policy"
-      subtitle="How we collect, use, and protect your personal data when you visit neversettlesaga.com or place an order with us."
+      subtitle="How we collect, use, and protect your personal data when you visit dreamcraftstudio.co.uk or place an order with us."
       lastUpdated={LAST_UPDATED}
     >
       <p>
-        This Privacy Policy explains how Never Settle Saga collects, uses, and protects your personal data when you visit{" "}
-        <a href="https://neversettlesaga.com" className="text-brand-500 hover:text-brand-600 underline">neversettlesaga.com</a>{" "}
+        This Privacy Policy explains how DreamCraft Studio collects, uses, and protects your personal data when you visit{" "}
+        <a href="https://dreamcraftstudio.co.uk" className="text-brand-500 hover:text-brand-600 underline">dreamcraftstudio.co.uk</a>{" "}
         or place an order with us. We are committed to handling your data lawfully, transparently, and only for purposes you would reasonably expect.
       </p>
       <p>
@@ -28,11 +28,11 @@ export default function PrivacyPage() {
 
       <PolicyH2>Who we are (the Data Controller)</PolicyH2>
       <p>
-        Never Settle Saga is a small independent business operated by Abel Frare in partnership with his wife.
+        DreamCraft Studio is a small independent business operated by Abel Frare in partnership with his wife.
       </p>
       <PolicyList>
         <li><strong className="text-ink">Address:</strong> 262a Seven Sisters Road, London N4 2HY, United Kingdom</li>
-        <li><strong className="text-ink">Contact:</strong> <a href="mailto:helpdesk@neversettlesaga.com" className="text-brand-500 hover:text-brand-600 underline">helpdesk@neversettlesaga.com</a></li>
+        <li><strong className="text-ink">Contact:</strong> <a href="mailto:helpdesk@dreamcraftstudio.co.uk" className="text-brand-500 hover:text-brand-600 underline">helpdesk@dreamcraftstudio.co.uk</a></li>
       </PolicyList>
       <p>
         For the purposes of UK and EU data protection law, we are the Data Controller for any personal data you provide to us through our website or by email.
@@ -158,7 +158,7 @@ export default function PrivacyPage() {
       </PolicyList>
       <p>
         To exercise any of these rights, email us at{" "}
-        <a href="mailto:helpdesk@neversettlesaga.com" className="text-brand-500 hover:text-brand-600 underline">helpdesk@neversettlesaga.com</a>
+        <a href="mailto:helpdesk@dreamcraftstudio.co.uk" className="text-brand-500 hover:text-brand-600 underline">helpdesk@dreamcraftstudio.co.uk</a>
         . We will respond within one calendar month, as required by law.
       </p>
 
@@ -204,12 +204,12 @@ export default function PrivacyPage() {
       <PolicyH2>Contact</PolicyH2>
       <p>For any questions about this policy or your personal data:</p>
       <p className="not-italic">
-        <strong className="text-ink">Never Settle Saga</strong>
+        <strong className="text-ink">DreamCraft Studio</strong>
         <br />
         262a Seven Sisters Road, London N4 2HY, United Kingdom
         <br />
-        <a href="mailto:helpdesk@neversettlesaga.com" className="text-brand-500 hover:text-brand-600 underline">
-          helpdesk@neversettlesaga.com
+        <a href="mailto:helpdesk@dreamcraftstudio.co.uk" className="text-brand-500 hover:text-brand-600 underline">
+          helpdesk@dreamcraftstudio.co.uk
         </a>
       </p>
 

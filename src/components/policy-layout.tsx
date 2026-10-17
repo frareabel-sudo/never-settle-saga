@@ -13,7 +13,7 @@ export function PolicyLayout({ title, subtitle, lastUpdated, children }: PolicyL
       <section className="relative pt-28 lg:pt-32 pb-12 bg-surface-alt border-b border-surface-line/20">
         <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <p className="text-brand-600 text-xs uppercase tracking-[0.3em] mb-4">
-            Never Settle Saga
+            DreamCraft Studio
           </p>
           <h1 className="font-display text-4xl sm:text-5xl font-bold mb-4">
             {title}

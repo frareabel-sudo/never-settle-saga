@@ -3,30 +3,30 @@ import Link from "next/link";
 import { PolicyLayout, PolicyH2, PolicyH3, PolicyList } from "@/components/policy-layout";
 
 export const metadata: Metadata = {
-  title: "FAQ — Never Settle Saga",
+  title: "FAQ",
   description:
-    "Frequently asked questions about Never Settle Saga products, ordering, shipping, returns, and payment.",
+    "Frequently asked questions about DreamCraft Studio products, ordering, shipping, returns, and payment.",
 };
 
-const LAST_UPDATED = "1 May 2026";
+const LAST_UPDATED = "17 October 2026";
 
 export default function FAQPage() {
   return (
     <PolicyLayout
       title="Frequently Asked Questions"
-      subtitle="Everything you need to know about ordering, shipping, materials, and what to expect from a handmade NSS piece."
+      subtitle="Everything you need to know about ordering, shipping, materials, and what to expect from a handmade DreamCraft Studio piece."
       lastUpdated={LAST_UPDATED}
     >
-      <PolicyH2>About Never Settle Saga</PolicyH2>
+      <PolicyH2>About DreamCraft Studio</PolicyH2>
 
-      <PolicyH3>Who makes NSS products?</PolicyH3>
+      <PolicyH3>Who makes DreamCraft Studio products?</PolicyH3>
       <p>
-        Never Settle Saga is a small independent studio run by Abel and his wife in London. Every product is designed, made, finished, and packed by us in-house — no third-party manufacturing.
+        DreamCraft Studio is a small independent studio run by Abel and his wife in London. Every product is designed, made, finished, and packed by us in-house — no third-party manufacturing.
       </p>
 
-      <PolicyH3>What does &ldquo;Never Settle Saga&rdquo; mean?</PolicyH3>
+      <PolicyH3>What&apos;s the idea behind DreamCraft Studio?</PolicyH3>
       <p>
-        It&apos;s the philosophy behind everything we make: don&apos;t settle for generic, mass-produced things. Every NSS piece is built around the idea that the objects you live with should feel made for you.
+        It&apos;s the philosophy behind everything we make: don&apos;t settle for generic, mass-produced things. Every DreamCraft Studio piece is built around the idea that the objects you live with should feel made for you.
       </p>
 
       <PolicyH2>Ordering</PolicyH2>
@@ -34,8 +34,8 @@ export default function FAQPage() {
       <PolicyH3>Are all your products made to order?</PolicyH3>
       <p>
         Yes. Nothing on the site is held in mass stock. When you place an order, we begin production specifically for you. This is why we ask you to contact us at{" "}
-        <a href="mailto:helpdesk@neversettlesaga.com" className="text-brand-500 hover:text-brand-600 underline">
-          helpdesk@neversettlesaga.com
+        <a href="mailto:helpdesk@dreamcraftstudio.co.uk" className="text-brand-500 hover:text-brand-600 underline">
+          helpdesk@dreamcraftstudio.co.uk
         </a>{" "}
         to confirm specifications before or shortly after ordering.
       </p>
@@ -58,8 +58,8 @@ export default function FAQPage() {
       <PolicyH3>Can I change my order after placing it?</PolicyH3>
       <p>
         If we haven&apos;t started production yet, almost certainly. Email us as soon as possible at{" "}
-        <a href="mailto:helpdesk@neversettlesaga.com" className="text-brand-500 hover:text-brand-600 underline">
-          helpdesk@neversettlesaga.com
+        <a href="mailto:helpdesk@dreamcraftstudio.co.uk" className="text-brand-500 hover:text-brand-600 underline">
+          helpdesk@dreamcraftstudio.co.uk
         </a>
         . Once production has started, changes may not be possible.
       </p>
@@ -74,8 +74,8 @@ export default function FAQPage() {
       <PolicyH3>Can I send my own image for a lithophane?</PolicyH3>
       <p>
         Yes — that&apos;s the whole point. After ordering, send us the image you want at{" "}
-        <a href="mailto:helpdesk@neversettlesaga.com" className="text-brand-500 hover:text-brand-600 underline">
-          helpdesk@neversettlesaga.com
+        <a href="mailto:helpdesk@dreamcraftstudio.co.uk" className="text-brand-500 hover:text-brand-600 underline">
+          helpdesk@dreamcraftstudio.co.uk
         </a>
         . We&apos;ll let you know if any adjustments are needed (resolution, contrast, framing) before printing.
       </p>
@@ -91,7 +91,7 @@ export default function FAQPage() {
 
       <PolicyH3>Are your products waterproof?</PolicyH3>
       <p>
-        No. Treat NSS products as decorative or functional indoor items. Mugs are dishwasher-safe on the top rack only; we recommend hand-washing to preserve the print.
+        No. Treat our products as decorative or functional indoor items. Mugs are dishwasher-safe on the top rack only; we recommend hand-washing to preserve the print.
       </p>
 
       <PolicyH3>Do your retro TV lamps need batteries?</PolicyH3>
@@ -104,8 +104,8 @@ export default function FAQPage() {
       <PolicyH3>Do you ship internationally?</PolicyH3>
       <p>
         Yes — UK, EU, and selected destinations worldwide. For destinations outside the EU, please contact us first at{" "}
-        <a href="mailto:helpdesk@neversettlesaga.com" className="text-brand-500 hover:text-brand-600 underline">
-          helpdesk@neversettlesaga.com
+        <a href="mailto:helpdesk@dreamcraftstudio.co.uk" className="text-brand-500 hover:text-brand-600 underline">
+          helpdesk@dreamcraftstudio.co.uk
         </a>{" "}
         so we can quote shipping accurately for your country.
       </p>
@@ -149,15 +149,15 @@ export default function FAQPage() {
       <PolicyH3>Do you offer commissions for unique pieces?</PolicyH3>
       <p>
         Yes. If you have an idea that doesn&apos;t fit our standard product range, email{" "}
-        <a href="mailto:helpdesk@neversettlesaga.com" className="text-brand-500 hover:text-brand-600 underline">
-          helpdesk@neversettlesaga.com
+        <a href="mailto:helpdesk@dreamcraftstudio.co.uk" className="text-brand-500 hover:text-brand-600 underline">
+          helpdesk@dreamcraftstudio.co.uk
         </a>{" "}
         with a description and we&apos;ll let you know if it&apos;s something we can take on.
       </p>
 
       <PolicyH3>Do you offer wholesale or partnerships with shops?</PolicyH3>
       <p>
-        We currently work with one retail partner. If you&apos;re a shop owner interested in stocking NSS, get in touch.
+        We currently work with one retail partner. If you&apos;re a shop owner interested in stocking DreamCraft Studio, get in touch.
       </p>
 
       <PolicyH3>Do you have a physical shop?</PolicyH3>
@@ -168,8 +168,8 @@ export default function FAQPage() {
       <PolicyH2>Contact</PolicyH2>
       <p>
         Anything we haven&apos;t covered? Email{" "}
-        <a href="mailto:helpdesk@neversettlesaga.com" className="text-brand-500 hover:text-brand-600 underline">
-          helpdesk@neversettlesaga.com
+        <a href="mailto:helpdesk@dreamcraftstudio.co.uk" className="text-brand-500 hover:text-brand-600 underline">
+          helpdesk@dreamcraftstudio.co.uk
         </a>{" "}
         and we&apos;ll get back to you within 1 to 2 business days.
       </p>

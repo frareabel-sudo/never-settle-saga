@@ -19,7 +19,7 @@ const geistMono = localFont({
 });
 
 export const metadata: Metadata = {
-  // Trading name is DreamCraft Studio; the domain stays neversettlesaga.com.
+  // DreamCraft Studio on dreamcraftstudio.co.uk; neversettlesaga.com 301s here.
   // Lithophane lamps were dropped from every line below: the catalogue has no
   // such category, and a title promising stock we do not carry is the same
   // drift that once made the homepage category cards link to nothing.
@@ -42,7 +42,7 @@ export const metadata: Metadata = {
     title: "DreamCraft Studio | Personalised Gifts Handmade in London",
     description:
       "3D printed, resin, sublimation and stationery — personalised by hand in London.",
-    url: "https://neversettlesaga.com",
+    url: "https://dreamcraftstudio.co.uk",
     siteName: "DreamCraft Studio",
     locale: "en_GB",
     type: "website",
@@ -51,7 +51,7 @@ export const metadata: Metadata = {
     // both expect; anything else gets cropped by somebody.
     images: [
       {
-        url: "https://neversettlesaga.com/images/og-share.jpg",
+        url: "https://dreamcraftstudio.co.uk/images/og-share.jpg",
         width: 1200,
         height: 630,
         alt: "DreamCraft Studio — sublimation, 3D, resin and stationery, personalised by hand in London",
@@ -63,7 +63,7 @@ export const metadata: Metadata = {
     title: "DreamCraft Studio | Personalised Gifts, London",
     description:
       "3D printed, resin, sublimation and stationery — personalised by hand in London.",
-    images: ["https://neversettlesaga.com/images/og-share.jpg"],
+    images: ["https://dreamcraftstudio.co.uk/images/og-share.jpg"],
   },
   robots: { index: true, follow: true },
 };

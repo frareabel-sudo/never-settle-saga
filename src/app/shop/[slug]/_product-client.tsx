@@ -382,7 +382,7 @@ export default function ProductClient({
                         onSubmit={(e) => {
                           e.preventDefault();
                           if (notifyEmail) {
-                            window.location.href = `mailto:helpdesk@neversettlesaga.com?subject=Notify Me: ${product.name}&body=Please notify me at ${notifyEmail} when ${product.name} becomes available.`;
+                            window.location.href = `mailto:helpdesk@dreamcraftstudio.co.uk?subject=Notify Me: ${product.name}&body=Please notify me at ${notifyEmail} when ${product.name} becomes available.`;
                             setNotifySubmitted(true);
                           }
                         }}

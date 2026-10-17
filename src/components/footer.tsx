@@ -114,11 +114,11 @@ export async function Footer() {
               <MapPin className="w-3.5 h-3.5" /> London, UK
             </span>
             <span className="flex items-center gap-1.5">
-              <Mail className="w-3.5 h-3.5" /> helpdesk@neversettlesaga.com
+              <Mail className="w-3.5 h-3.5" /> helpdesk@dreamcraftstudio.co.uk
             </span>
           </div>
           <p className="text-sm text-ink-inverse/60">
-            &copy; {new Date().getFullYear()} Never Settle Saga. Made with love by Abel &amp; Jennifer in London
+            &copy; {new Date().getFullYear()} DreamCraft Studio. Made with love by Abel &amp; Jennifer in London
           </p>
         </div>
       </div>

@@ -40,7 +40,7 @@ export interface StoreSettings {
 
 export const DEFAULT_CONTACT_SETTINGS: ContactSettings = {
   address: "London, UK",
-  email: "helpdesk@neversettlesaga.com",
+  email: "helpdesk@dreamcraftstudio.co.uk",
   hours: "Mon–Fri, 9am–6pm GMT",
   social: { instagram: "", facebook: "", twitter: "", tiktok: "", youtube: "", whatsapp: "" },
 };

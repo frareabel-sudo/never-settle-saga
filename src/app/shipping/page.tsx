@@ -3,18 +3,18 @@ import Link from "next/link";
 import { PolicyLayout, PolicyH2, PolicyH3, PolicyList } from "@/components/policy-layout";
 
 export const metadata: Metadata = {
-  title: "Shipping Info — Never Settle Saga",
+  title: "Shipping Info",
   description:
-    "Production timelines, UK and EU shipping costs, and how we handle international orders for handmade NSS products.",
+    "Production timelines, UK and EU shipping costs, and how we handle international orders for handmade DreamCraft Studio products.",
 };
 
-const LAST_UPDATED = "1 May 2026";
+const LAST_UPDATED = "17 October 2026";
 
 export default function ShippingPage() {
   return (
     <PolicyLayout
       title="Shipping Info"
-      subtitle="Every Never Settle Saga piece is made by hand in our London studio. Here's what to expect when you order."
+      subtitle="Every DreamCraft Studio piece is made by hand in our London studio. Here's what to expect when you order."
       lastUpdated={LAST_UPDATED}
     >
       <PolicyH2>Where we ship</PolicyH2>
@@ -27,8 +27,8 @@ export default function ShippingPage() {
         </li>
         <li>
           <strong className="text-ink">Rest of the world</strong> — We do ship internationally outside the UK and EU, but pricing and delivery options vary significantly by destination. For international orders outside the EU, please contact us at{" "}
-          <a href="mailto:helpdesk@neversettlesaga.com" className="text-brand-500 hover:text-brand-600 underline">
-            helpdesk@neversettlesaga.com
+          <a href="mailto:helpdesk@dreamcraftstudio.co.uk" className="text-brand-500 hover:text-brand-600 underline">
+            helpdesk@dreamcraftstudio.co.uk
           </a>{" "}
           before placing your order so we can confirm shipping costs, customs handling, and estimated delivery time for your specific country.
         </li>
@@ -36,7 +36,7 @@ export default function ShippingPage() {
 
       <PolicyH2>Processing time</PolicyH2>
       <p>
-        Every NSS product is made to order. Nothing on our website is mass-produced or held in large stock — each lithophane lamp, miniature, mug, planner, or laser-cut piece is created specifically for you after your order is placed.
+        Every DreamCraft Studio product is made to order. Nothing on our website is mass-produced or held in large stock — each lithophane lamp, miniature, mug, planner, or laser-cut piece is created specifically for you after your order is placed.
       </p>
       <p>
         Because of this, we ask that you get in touch with us before or shortly after placing your order so we can:
@@ -48,8 +48,8 @@ export default function ShippingPage() {
       </PolicyList>
       <p>
         You can reach us at{" "}
-        <a href="mailto:helpdesk@neversettlesaga.com" className="text-brand-500 hover:text-brand-600 underline">
-          helpdesk@neversettlesaga.com
+        <a href="mailto:helpdesk@dreamcraftstudio.co.uk" className="text-brand-500 hover:text-brand-600 underline">
+          helpdesk@dreamcraftstudio.co.uk
         </a>
         .
       </p>
@@ -89,20 +89,20 @@ export default function ShippingPage() {
       <PolicyH2>Lost or damaged parcels</PolicyH2>
       <p>
         If your parcel arrives damaged, or if tracking shows no movement for an unusually long period, contact us at{" "}
-        <a href="mailto:helpdesk@neversettlesaga.com" className="text-brand-500 hover:text-brand-600 underline">
-          helpdesk@neversettlesaga.com
+        <a href="mailto:helpdesk@dreamcraftstudio.co.uk" className="text-brand-500 hover:text-brand-600 underline">
+          helpdesk@dreamcraftstudio.co.uk
         </a>{" "}
         with your order number and we&apos;ll investigate with the courier and put things right.
       </p>
 
       <PolicyH2>Contact</PolicyH2>
       <p className="not-italic">
-        <strong className="text-ink">Never Settle Saga</strong>
+        <strong className="text-ink">DreamCraft Studio</strong>
         <br />
         262a Seven Sisters Road, London N4 2HY, United Kingdom
         <br />
-        <a href="mailto:helpdesk@neversettlesaga.com" className="text-brand-500 hover:text-brand-600 underline">
-          helpdesk@neversettlesaga.com
+        <a href="mailto:helpdesk@dreamcraftstudio.co.uk" className="text-brand-500 hover:text-brand-600 underline">
+          helpdesk@dreamcraftstudio.co.uk
         </a>
       </p>
 

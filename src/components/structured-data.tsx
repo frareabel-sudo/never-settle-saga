@@ -2,10 +2,10 @@ export function StructuredData() {
   const organizationSchema = {
     "@context": "https://schema.org",
     "@type": "Organization",
-    name: "Never Settle Saga",
-    url: "https://neversettlesaga.com",
-    logo: "https://neversettlesaga.com/images/dreamcraft-logo.jpg",
-    email: "helpdesk@neversettlesaga.com",
+    name: "DreamCraft Studio",
+    url: "https://dreamcraftstudio.co.uk",
+    logo: "https://dreamcraftstudio.co.uk/images/dreamcraft-logo.jpg",
+    email: "helpdesk@dreamcraftstudio.co.uk",
     address: {
       "@type": "PostalAddress",
       addressLocality: "London",

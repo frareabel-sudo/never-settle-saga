@@ -156,10 +156,10 @@ const ALLOWED_SHIPPING_COUNTRIES = [
 ] as const;
 
 const SHIPPING_DISCLAIMER =
-  "We ship to the UK and EU only. Please pick the [UK] rate if your address is in the United Kingdom, or an [EU] rate for any EU member state — choosing the wrong region may delay your order. For destinations outside the UK and EU, please email helpdesk@neversettlesaga.com BEFORE placing your order so we can quote shipping for your country.";
+  "We ship to the UK and EU only. Please pick the [UK] rate if your address is in the United Kingdom, or an [EU] rate for any EU member state — choosing the wrong region may delay your order. For destinations outside the UK and EU, please email helpdesk@dreamcraftstudio.co.uk BEFORE placing your order so we can quote shipping for your country.";
 
 const SUBMIT_DISCLAIMER =
-  "Every NSS piece is made to order. After payment we will email you within 1–2 business days to confirm your specifications and a production timeline.";
+  "Every DreamCraft Studio piece is made to order. After payment we will email you within 1–2 business days to confirm your specifications and a production timeline.";
 
 export async function POST(request: NextRequest) {
   try {
