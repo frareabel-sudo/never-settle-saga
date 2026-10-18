@@ -21,7 +21,7 @@ export default function FAQPage() {
 
       <PolicyH3>Who makes DreamCraft Studio products?</PolicyH3>
       <p>
-        DreamCraft Studio is a small independent studio run by Abel and his wife in London. Every product is designed, made, finished, and packed by us in-house — no third-party manufacturing.
+        DreamCraft Studio is a small independent studio in London, run by Jennifer with help from her husband Abel. Every product is designed, made, finished, and packed by us in-house — no third-party manufacturing.
       </p>
 
       <PolicyH3>What&apos;s the idea behind DreamCraft Studio?</PolicyH3>

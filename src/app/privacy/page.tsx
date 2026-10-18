@@ -8,7 +8,7 @@ export const metadata: Metadata = {
     "How DreamCraft Studio collects, uses, and protects your personal data, in accordance with UK GDPR and EU GDPR.",
 };
 
-const LAST_UPDATED = "17 October 2026";
+const LAST_UPDATED = "18 October 2026";
 
 export default function PrivacyPage() {
   return (
@@ -28,7 +28,7 @@ export default function PrivacyPage() {
 
       <PolicyH2>Who we are (the Data Controller)</PolicyH2>
       <p>
-        DreamCraft Studio is a small independent business operated by Abel Frare in partnership with his wife.
+        DreamCraft Studio is a small independent business operated by Jennifer Ingryd da Silva Frare as a sole trader.
       </p>
       <PolicyList>
         <li><strong className="text-ink">Address:</strong> 262a Seven Sisters Road, London N4 2HY, United Kingdom</li>
@@ -187,7 +187,7 @@ export default function PrivacyPage() {
       <PolicyList>
         <li>HTTPS encryption across the entire website</li>
         <li>Encrypted database storage (Azure Cosmos DB)</li>
-        <li>Limited access — only Abel and his wife have access to customer data</li>
+        <li>Limited access — only Jennifer and her husband Abel, who helps run the studio, have access to customer data</li>
         <li>Strong authentication on all admin systems</li>
       </PolicyList>
 
