@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { ProductCard } from "@/components/product-card";
 import { FadeIn } from "@/components/motion-wrapper";
 import { ProductsBanner } from "@/components/products-banner";
+import { CampaignBanner } from "@/components/campaign-banner";
 import { type Product } from "@/lib/data";
 import {
   buildCategoryTree,
@@ -100,6 +101,7 @@ export default function ShopClient({
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           {/* Range showcase above the title, same order as the home hero:
               picture first, words underneath. */}
+          <CampaignBanner className="rounded-2xl overflow-hidden mb-8" />
           <ProductsBanner variant="strip" />
 
           <FadeIn>

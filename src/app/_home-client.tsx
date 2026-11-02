@@ -22,6 +22,7 @@ import { Input } from "@/components/ui/input";
 import { ProductCard } from "@/components/product-card";
 import { FadeIn, StaggerContainer, StaggerItem } from "@/components/motion-wrapper";
 import { Marquee } from "@/components/marquee";
+import { CampaignBanner } from "@/components/campaign-banner";
 import { type Product, type Testimonial } from "@/lib/data";
 import { buildCategoryTree, parentOf } from "@/lib/category-tree";
 import { isCorporate } from "@/lib/personalisation";
@@ -218,6 +219,9 @@ export default function HomeClient({
         ref={heroRef}
         className="relative pt-16 lg:pt-20 bg-surface"
       >
+        {/* Sale band (Black Friday / Christmas / Boxing Day). Dates live in
+            src/lib/campaigns.ts; outside them this renders nothing. */}
+        <CampaignBanner />
         <div className="relative w-full">
           {/* The artwork is 8:3 — ultra-wide. Held at its own ratio a phone gets
               a ~140px sliver where nothing is legible, so narrow screens take a
