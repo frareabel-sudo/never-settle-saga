@@ -1,6 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
+import { useFestive } from "@/components/festive";
 
 const items = [
   "HANDMADE IN LONDON",
@@ -12,9 +13,11 @@ const items = [
 ];
 
 const separator = " · ";
-const text = items.join(separator) + separator;
 
 export function Marquee() {
+  // Christmas lines while the festive window is open (src/lib/festive.ts).
+  const festive = useFestive();
+  const text = (festive?.marquee ?? items).join(separator) + separator;
   return (
     <div className="relative overflow-hidden bg-surface border-y border-brand-500/10 py-3">
       <div className="flex whitespace-nowrap">

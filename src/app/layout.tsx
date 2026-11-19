@@ -6,6 +6,7 @@ import { Footer } from "@/components/footer";
 import { Analytics } from "@/components/analytics";
 import { PromoBubble } from "@/components/promo-bubble";
 import { StructuredData } from "@/components/structured-data";
+import { Snowfall } from "@/components/festive";
 
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",
@@ -84,6 +85,8 @@ export default function RootLayout({
         <main className="min-h-screen">{children}</main>
         <Footer />
         <PromoBubble />
+        {/* Christmas snow — dates in src/lib/festive.ts, off outside them. */}
+        <Snowfall />
       </body>
     </html>
   );

@@ -48,6 +48,23 @@ body {
   }
 }
 
+/* Christmas fairy lights (src/components/festive.tsx). Lit by default; only
+   twinkle for visitors who have not asked for reduced motion. */
+.festive-bulb {
+  filter: drop-shadow(0 0 3px currentColor);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .festive-bulb {
+    animation: festive-twinkle 2.4s ease-in-out infinite;
+  }
+}
+
+@keyframes festive-twinkle {
+  0%, 100% { opacity: 1; filter: drop-shadow(0 0 4px currentColor); }
+  50% { opacity: 0.45; filter: drop-shadow(0 0 0 currentColor); }
+}
+
 @layer utilities {
   .text-balance {
     text-wrap: balance;

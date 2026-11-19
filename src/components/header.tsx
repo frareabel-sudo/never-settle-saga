@@ -6,6 +6,7 @@ import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ShoppingBag, Menu, X } from "lucide-react";
 import { useCart } from "@/hooks/use-cart";
+import { FairyLights, SantaHat } from "@/components/festive";
 
 const navLinks = [
   { href: "/", label: "Home" },
@@ -40,15 +41,19 @@ export function Header() {
           <div className="flex items-center justify-between h-16 lg:h-20">
             {/* Logo */}
             <Link href="/" className="flex items-center gap-3 group">
-              <Image
-                src="/images/dreamcraft-logo.jpg"
-                alt="DreamCraft Studio"
-                width={44}
-                height={44}
-                // The badge is circular inside a square file: rounded-full crops
-                // the pale corners instead of parking them on the cream header.
-                className="rounded-full ring-1 ring-surface-line/60 group-hover:shadow-lg group-hover:shadow-brand-500/30 transition-all duration-300"
-              />
+              <span className="relative shrink-0">
+                <Image
+                  src="/images/dreamcraft-logo.jpg"
+                  alt="DreamCraft Studio"
+                  width={44}
+                  height={44}
+                  // The badge is circular inside a square file: rounded-full crops
+                  // the pale corners instead of parking them on the cream header.
+                  className="rounded-full ring-1 ring-surface-line/60 group-hover:shadow-lg group-hover:shadow-brand-500/30 transition-all duration-300"
+                />
+                {/* Christmas only — dates in src/lib/festive.ts. */}
+                <SantaHat className="-top-2.5 -left-2.5 w-8 -rotate-[18deg] drop-shadow-sm" />
+              </span>
               {/* The name shows from the narrowest screen up: most visitors
                   arrive from Instagram, where they have just read what we make,
                   and a bare badge here throws that away. The trade line needs
@@ -105,6 +110,7 @@ export function Header() {
             </div>
           </div>
         </div>
+        <FairyLights />
       </header>
 
       {/* Full-screen mobile overlay */}
