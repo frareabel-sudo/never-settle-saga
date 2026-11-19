@@ -18,6 +18,18 @@ export type Festive = {
   endsAt: string;
   /** Replaces the scrolling marquee lines while the window is open. */
   marquee: string[];
+  /**
+   * Replaces the home hero photo. Artwork with its heading and button printed
+   * in, so it is shown whole at its own ratio — never cropped — and the whole
+   * image is the link.
+   */
+  heroBanner?: {
+    src: string;
+    alt: string;
+    width: number;
+    height: number;
+    href: string;
+  };
 };
 
 const FESTIVE: Festive[] = [
@@ -33,6 +45,13 @@ const FESTIVE: Festive[] = [
       "HANDMADE IN LONDON",
       "FREE UK SHIPPING OVER £50",
     ],
+    heroBanner: {
+      src: "/images/banners/christmas-door-signs.jpg",
+      alt: "Bring Christmas magic home: festive decorative door signs by DreamCraft Studio, with Santa, reindeer and Ho Ho Ho designs. Shop now.",
+      width: 1752,
+      height: 897,
+      href: "/shop/christmas-door-hanger",
+    },
   },
 ];
 

@@ -27,6 +27,7 @@ import { type Product, type Testimonial } from "@/lib/data";
 import { buildCategoryTree, parentOf } from "@/lib/category-tree";
 import { isCorporate } from "@/lib/personalisation";
 import { activeSeason, daysLeft, isSeasonCategory } from "@/lib/seasonal";
+import { activeFestive } from "@/lib/festive";
 import type { LucideIcon } from "lucide-react";
 import { TestimonialsCarousel } from "@/components/testimonials-carousel";
 
@@ -170,6 +171,10 @@ export default function HomeClient({
   // category actually has products — an empty "Halloween" heading is worse
   // than no Halloween at all.
   const season = useMemo(() => activeSeason(), []);
+  // Christmas hero artwork. Decided in render, like `season`: the page
+  // revalidates every 60s, so the server's answer is never more than a minute
+  // out at the window's edges.
+  const festive = useMemo(() => activeFestive(), []);
   const seasonProducts = useMemo(() => {
     if (!season) return [];
     return products
@@ -223,10 +228,29 @@ export default function HomeClient({
             src/lib/campaigns.ts; outside them this renders nothing. */}
         <CampaignBanner />
         <div className="relative w-full">
-          {/* The artwork is 8:3 — ultra-wide. Held at its own ratio a phone gets
+          {festive?.heroBanner ? (
+          // Christmas artwork (src/lib/festive.ts). Its heading and "Shop now"
+          // are printed into the image, so it is held whole at its own ratio —
+          // no crop, no scroll zoom — and the whole picture is the link.
+          <Link
+            href={festive.heroBanner.href}
+            className="block max-w-[1400px] mx-auto"
+          >
+            <Image
+              src={festive.heroBanner.src}
+              alt={festive.heroBanner.alt}
+              width={festive.heroBanner.width}
+              height={festive.heroBanner.height}
+              priority
+              sizes="(max-width: 1400px) 100vw, 1400px"
+              className="w-full h-auto"
+            />
+          </Link>
+          ) : (
+          /* The artwork is 8:3 — ultra-wide. Held at its own ratio a phone gets
               a ~140px sliver where nothing is legible, so narrow screens take a
               taller box and crop the sides instead; the centre of the
-              composition survives and only the outer plants and t-shirt go. */}
+              composition survives and only the outer plants and t-shirt go. */
           <div className="relative w-full aspect-[3/2] sm:aspect-[21/9] lg:aspect-[8/3] overflow-hidden">
             <motion.div style={{ scale: heroScale }} className="absolute inset-0">
               <Image
@@ -239,6 +263,7 @@ export default function HomeClient({
               />
             </motion.div>
           </div>
+          )}
 
           {/* Copy strip sits UNDER the photo, never over it. An overlay was
               tried and rejected: the products in this shot run along the

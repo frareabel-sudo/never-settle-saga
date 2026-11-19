@@ -56,6 +56,20 @@ const SEASONS: Season[] = [
     startsAt: "2026-09-20",
     endsAt: "2026-10-31",
   },
+  {
+    key: "christmas-2026",
+    category: "Christmas",
+    aliases: ["xmas", "natal", "christmas gifts"],
+    eyebrow: "Christmas",
+    title: "Christmas",
+    blurb:
+      "Festive door signs and decorations, handmade in London and personalised with any name. Order by 12 December for Christmas delivery.",
+    cta: "Shop Christmas",
+    // No banner here: the Christmas artwork is already the home hero
+    // (src/lib/festive.ts), and showing it twice would say everything twice.
+    startsAt: "2026-11-19",
+    endsAt: "2026-12-24",
+  },
 ];
 
 export function activeSeason(now: Date = new Date()): Season | null {
