@@ -4,6 +4,7 @@ import "./globals.css";
 import { Header } from "@/components/header";
 import { Footer } from "@/components/footer";
 import { Analytics } from "@/components/analytics";
+import { VisitTracker } from "@/components/visit-tracker";
 import { PromoBubble } from "@/components/promo-bubble";
 import { StructuredData } from "@/components/structured-data";
 import { Snowfall } from "@/components/festive";
@@ -80,6 +81,7 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased bg-surface text-foreground`}
       >
         <Analytics />
+        <VisitTracker />
         <StructuredData />
         <Header />
         <main className="min-h-screen">{children}</main>

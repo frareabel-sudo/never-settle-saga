@@ -393,6 +393,10 @@ export async function POST(request: NextRequest) {
       cancel_url: `${request.nextUrl.origin}/shop`,
       customer_email: email,
       ...discountParams,
+      // When an unpaid session expires (24 h), Stripe keeps a recovery link
+      // for 30 days. Command Centre lists abandoned checkouts with it so the
+      // shopper can be sent straight back to the same basket.
+      after_expiration: { recovery: { enabled: true } },
       shipping_address_collection: {
         allowed_countries: [...ALLOWED_SHIPPING_COUNTRIES],
       },

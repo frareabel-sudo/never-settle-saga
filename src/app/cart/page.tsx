@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import { Trash2, Minus, Plus, ShoppingBag, Truck } from "lucide-react";
 import { useCart } from "@/hooks/use-cart";
 import { whatsAppLink } from "@/lib/personalisation";
+import { trackCheckoutStart } from "@/components/visit-tracker";
 import { cartStore, cartUnitPrice, cartListPrice, cartGroupQuantity } from "@/lib/cart-store";
 import type { Product } from "@/lib/data";
 
@@ -86,6 +87,7 @@ export default function CartPage() {
     }
     if (items.length === 0) return;
 
+    trackCheckoutStart();
     setLoading(true);
     try {
       const res = await fetch("/api/checkout", {
