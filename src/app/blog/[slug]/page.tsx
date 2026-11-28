@@ -6,8 +6,33 @@ import { Button } from "@/components/ui/button";
 import { FadeIn } from "@/components/motion-wrapper";
 import { getBlogPostBySlug } from "@/lib/blog";
 import { notFound } from "next/navigation";
+import type { Metadata } from "next";
 
 export const revalidate = 60;
+
+export async function generateMetadata({
+  params,
+}: {
+  params: { slug: string };
+}): Promise<Metadata> {
+  const post = await getBlogPostBySlug(params.slug);
+  if (!post) return {};
+  const url = `https://dreamcraftstudio.co.uk/blog/${post.slug}`;
+  return {
+    title: post.title,
+    description: post.excerpt,
+    alternates: { canonical: url },
+    openGraph: {
+      title: post.title,
+      description: post.excerpt,
+      url,
+      type: "article",
+      siteName: "DreamCraft Studio",
+      locale: "en_GB",
+      ...(post.image ? { images: [{ url: post.image, alt: post.title }] } : {}),
+    },
+  };
+}
 
 export default async function BlogPostPage({
   params,

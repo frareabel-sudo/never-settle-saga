@@ -14,6 +14,75 @@ import Stripe from "stripe";
 // so the deploy errors loudly instead of silently 500ing every webhook.
 assertWebhookSecret();
 
+type CustomerOrderInput = {
+  email: string;
+  name: string;
+  phone: string;
+  shippingAddress: string;
+  currency: string;
+  orderTotal: number;
+  orderAt: string;
+};
+
+// Add one order to the customer's aggregates. Called ONLY by the webhook
+// delivery that won the order insert, so a duplicate or concurrent delivery
+// (checkout.session.completed + payment_intent.succeeded arrive together) can
+// never count the same order twice. Replaces use the etag so two different
+// orders from the same customer landing at once don't overwrite each other.
+async function recordCustomerOrder(customerId: string, c: CustomerOrderInput, rid: string) {
+  const customers = await getContainer("customers");
+  for (let attempt = 0; attempt < 5; attempt++) {
+    let existing: (Record<string, unknown> & { _etag?: string }) | null = null;
+    try {
+      const { resource } = await customers.item(customerId, "customer").read();
+      existing = (resource as Record<string, unknown> & { _etag?: string }) || null;
+    } catch (err) {
+      if ((err as { code?: number }).code !== 404) throw err;
+    }
+
+    if (existing) {
+      existing.totalOrders = ((existing.totalOrders as number) || 0) + 1;
+      existing.totalSpent = ((existing.totalSpent as number) || 0) + c.orderTotal;
+      existing.lastOrderAt = c.orderAt;
+      existing.updatedAt = new Date().toISOString();
+      try {
+        await customers.item(customerId, "customer").replace(existing, {
+          accessCondition: { type: "IfMatch", condition: existing._etag || "" },
+        });
+        return;
+      } catch (err) {
+        if ((err as { code?: number }).code === 412) continue; // changed under us — re-read
+        throw err;
+      }
+    }
+
+    try {
+      await customers.items.create({
+        id: customerId,
+        partitionKey: "customer",
+        email: c.email.toLowerCase(),
+        name: c.name,
+        phone: c.phone,
+        shippingAddress: c.shippingAddress,
+        tags: ["webhook"],
+        notes: "",
+        totalOrders: 1,
+        totalSpent: c.orderTotal,
+        currency: c.currency,
+        firstOrderAt: c.orderAt,
+        lastOrderAt: c.orderAt,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      });
+      return;
+    } catch (err) {
+      if ((err as { code?: number }).code === 409) continue; // created meanwhile — increment it
+      throw err;
+    }
+  }
+  console.error(`[${rid}] customer ${customerId} aggregate update gave up after retries`);
+}
+
 // Persist an order to Cosmos and deduct stock atomically-ish.
 // Idempotent on stripeSessionId — re-delivery of the webhook is a no-op.
 async function persistOrderFromSession(sessionId: string, rid = "-") {
@@ -47,10 +116,13 @@ async function persistOrderFromSession(sessionId: string, rid = "-") {
     });
   }
 
-  if (session.payment_status !== "paid") {
+  // "no_payment_required" = a £0 order (100% code + free shipping). It is a
+  // real order to make and ship, so it is persisted like a paid one.
+  if (session.payment_status !== "paid" && session.payment_status !== "no_payment_required") {
     console.log(`[webhook] skipping persist — session ${sessionId} not paid`);
     return;
   }
+  const isFreeOrder = session.payment_status === "no_payment_required";
 
   const ordersContainer = await getContainer("orders");
   const orderId = deterministicOrderId(sessionId);
@@ -69,8 +141,6 @@ async function persistOrderFromSession(sessionId: string, rid = "-") {
     if (code !== 404) throw err;
   }
 
-  const customersContainer = await getContainer("customers");
-
   const email = session.customer_details?.email || session.customer_email || "";
   const name = session.customer_details?.name || "";
   const shipDetails = (session as unknown as { shipping_details?: { name?: string | null; address?: Record<string, string | null> | null } }).shipping_details;
@@ -81,63 +151,9 @@ async function persistOrderFromSession(sessionId: string, rid = "-") {
   const phone = session.customer_details?.phone || "";
   const recipientName = shipDetails?.name || name;
 
-  // Upsert customer using a deterministic id (sha1 of lowercased email).
-  // Try a point-read first; on 404 create; on 409 fall back to read+increment.
-  let customerId: string | undefined;
-  if (email) {
-    customerId = customerIdForEmail(email);
-    const orderTotal = (session.amount_total || 0) / 100;
-    const lastOrderAt = new Date(session.created * 1000).toISOString();
-
-    let existing: Record<string, unknown> | null = null;
-    try {
-      const { resource } = await customersContainer.item(customerId, "customer").read();
-      existing = (resource as Record<string, unknown>) || null;
-    } catch (err) {
-      const code = (err as { code?: number }).code;
-      if (code !== 404) throw err;
-    }
-
-    if (existing) {
-      existing.totalOrders = ((existing.totalOrders as number) || 0) + 1;
-      existing.totalSpent = ((existing.totalSpent as number) || 0) + orderTotal;
-      existing.lastOrderAt = lastOrderAt;
-      existing.updatedAt = new Date().toISOString();
-      await customersContainer.item(customerId, "customer").replace(existing);
-    } else {
-      try {
-        await customersContainer.items.create({
-          id: customerId,
-          partitionKey: "customer",
-          email: email.toLowerCase(),
-          name,
-          phone,
-          shippingAddress: formattedAddress,
-          tags: ["webhook"],
-          notes: "",
-          totalOrders: 1,
-          totalSpent: orderTotal,
-          currency: session.currency || "gbp",
-          firstOrderAt: lastOrderAt,
-          lastOrderAt,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-        });
-      } catch (err) {
-        const code = (err as { code?: number }).code;
-        if (code !== 409) throw err;
-        // Concurrent webhook beat us — re-read and increment.
-        const { resource } = await customersContainer.item(customerId, "customer").read();
-        if (resource) {
-          resource.totalOrders = (resource.totalOrders || 0) + 1;
-          resource.totalSpent = (resource.totalSpent || 0) + orderTotal;
-          resource.lastOrderAt = lastOrderAt;
-          resource.updatedAt = new Date().toISOString();
-          await customersContainer.item(customerId, "customer").replace(resource);
-        }
-      }
-    }
-  }
+  // Deterministic id (sha1 of lowercased email). The aggregates are updated
+  // after the order insert succeeds — see recordCustomerOrder.
+  const customerId: string | undefined = email ? customerIdForEmail(email) : undefined;
 
   const lineItems = session.line_items?.data || [];
 
@@ -158,6 +174,9 @@ async function persistOrderFromSession(sessionId: string, rid = "-") {
       quantity: qty,
       unitPrice: lineTotal / qty,
       lineTotal,
+      // Before discount — the email lists this, then the discount line, so the
+      // maths adds up. (lineTotal stays after-discount for CC's reports.)
+      lineSubtotal: (li.amount_subtotal || 0) / 100,
       stripePriceId: price?.id,
       stripeProductId: typeof price?.product === "string" ? price?.product : product?.id,
     };
@@ -220,6 +239,7 @@ async function persistOrderFromSession(sessionId: string, rid = "-") {
     shippingMethod,
     status: "confirmed",
     paymentStatus: "paid",
+    ...(isFreeOrder ? { freeOrder: true } : {}),
     stripePaymentIntentId: piId,
     paymentMethod,
     paymentBrand,
@@ -249,6 +269,25 @@ async function persistOrderFromSession(sessionId: string, rid = "-") {
     if (code !== 409) throw err;
     console.log(`[webhook] concurrent delivery raced — order ${orderId} already created`);
     return;
+  }
+
+  // Only the delivery that created the order gets here. Non-fatal: the order is
+  // safe, and a failure here must not make Stripe retry (the retry would see
+  // the order and skip, so throwing would gain nothing).
+  if (customerId) {
+    try {
+      await recordCustomerOrder(customerId, {
+        email,
+        name,
+        phone,
+        shippingAddress: formattedAddress,
+        currency: session.currency || "gbp",
+        orderTotal: (session.amount_total || 0) / 100,
+        orderAt: new Date(session.created * 1000).toISOString(),
+      }, rid);
+    } catch (err) {
+      console.error(`[${rid}] customer aggregate update failed for order ${orderNumber}:`, err);
+    }
   }
 
   // Deduct stock per line_item. Non-fatal: stock errors are logged inside
@@ -298,8 +337,8 @@ async function persistOrderFromSession(sessionId: string, rid = "-") {
           name: it.name,
           options: it.options || undefined,
           quantity: it.quantity,
-          unitPrice: it.unitPrice,
-          lineTotal: it.lineTotal,
+          unitPrice: it.lineSubtotal / (it.quantity || 1),
+          lineTotal: it.lineSubtotal,
         })),
         subtotal: (session.amount_subtotal || 0) / 100,
         shipping: shippingAmount,
@@ -450,62 +489,131 @@ async function handleRefund(rid: string, charge: Stripe.Charge) {
   }
 
   const order = resources[0];
-  const isFullRefund = charge.amount_refunded >= charge.amount;
 
-  // Find the newest refund on the charge for amount/reason/id. Stripe orders
-  // them newest-first, so the first element is what this webhook is about.
-  const latestRefund = charge.refunds?.data?.[0];
-  const refundId = latestRefund?.id || charge.id;
-  const refundAmount = latestRefund
-    ? (latestRefund.amount || 0) / 100
-    : (charge.amount_refunded || 0) / 100;
-  const refundReason = latestRefund?.reason || "";
+  // The charge in the event no longer embeds its refunds (Stripe API
+  // 2022-11-15+), so list them. Each refund id is processed exactly once:
+  // ids already in order.refunds are skipped, which makes a re-delivered
+  // event a no-op instead of a second restock / email / customer reversal.
+  const stripe = getStripe();
+  let refundsData: Array<Pick<Stripe.Refund, "id" | "amount" | "status" | "reason" | "created">>;
+  try {
+    refundsData = (await stripe.refunds.list({ charge: charge.id, limit: 100 })).data;
+  } catch (err) {
+    // e.g. a restricted key without Refunds:read. Fall back to whatever the
+    // event carries, else to the change in amount_refunded since last time —
+    // keyed on the cumulative amount so a re-delivery still dedupes.
+    console.error(`[${rid}] refunds.list failed — falling back to amount delta:`, err);
+    refundsData = charge.refunds?.data ?? [];
+    if (refundsData.length === 0) {
+      const prevCents = Math.round((order.refundedAmount || 0) * 100);
+      const delta = (charge.amount_refunded || 0) - prevCents;
+      if (delta > 0) {
+        refundsData = [{
+          id: `${charge.id}:${charge.amount_refunded}`,
+          amount: delta,
+          status: "succeeded",
+          reason: null,
+          created: Math.floor(Date.now() / 1000),
+        }];
+      }
+    }
+  }
+  const known = new Set(
+    (Array.isArray(order.refunds) ? order.refunds : []).map((r: { refundId?: string }) => r.refundId),
+  );
+  // Orders refunded by the previous code may carry the charge id instead of
+  // the refund id. Anything created before such an entry was processed is
+  // already reflected in the order and the customer, so it is not new.
+  const legacy = (Array.isArray(order.refunds) ? order.refunds : []).filter(
+    (r: { refundId?: string }) => !String(r.refundId || "").startsWith("re_"),
+  );
+  const legacyCutoffMs = legacy.reduce(
+    (max: number, r: { processedAt?: string }) => Math.max(max, Date.parse(r.processedAt || "") || 0),
+    0,
+  );
+  const newRefunds = refundsData
+    .filter((r) => r.status !== "failed" && r.status !== "canceled" && !known.has(r.id))
+    .filter((r) => r.created * 1000 > legacyCutoffMs)
+    .sort((a, b) => a.created - b.created);
+
+  const isFullRefund = charge.amount_refunded >= charge.amount;
+  const wasFullyRefunded = order.status === "refunded";
+  const becomesFullyRefunded = isFullRefund && !wasFullyRefunded;
+
+  if (newRefunds.length === 0 && !becomesFullyRefunded) {
+    console.log(`[${rid}] charge.refunded for order ${order.orderNumber} — nothing new, skipping`);
+    return;
+  }
 
   order.paymentStatus = isFullRefund ? "refunded" : "partially_refunded";
   order.status = isFullRefund ? "refunded" : "partially_refunded";
   order.refundedAmount = (charge.amount_refunded || 0) / 100;
   order.refundedAt = new Date().toISOString();
   order.refunds = Array.isArray(order.refunds) ? order.refunds : [];
-  if (!order.refunds.find((r: { refundId?: string }) => r.refundId === refundId)) {
+  for (const r of newRefunds) {
     order.refunds.push({
-      refundId,
-      amount: refundAmount,
+      refundId: r.id,
+      amount: (r.amount || 0) / 100,
       type: isFullRefund ? "full" : "partial",
-      reason: refundReason,
+      reason: r.reason || "",
       processedAt: new Date().toISOString(),
     });
   }
   order.updatedAt = new Date().toISOString();
-  await ordersContainer.item(order.id, "order").replace(order);
 
+  // Claim the refunds with an etag write BEFORE any side effect. If two
+  // deliveries race, one gets 412 and returns 500; Stripe's retry then finds
+  // the refunds recorded and skips.
+  await ordersContainer.item(order.id, "order").replace(order, {
+    accessCondition: { type: "IfMatch", condition: order._etag },
+  });
+
+  const newAmount = newRefunds.reduce((sum, r) => sum + (r.amount || 0), 0) / 100;
   console.log(
-    `[${rid}] refund ${refundId} · ${isFullRefund ? "full" : "partial"} · £${refundAmount.toFixed(2)} · reason="${refundReason}" · order ${order.orderNumber}`,
+    `[${rid}] refund · ${newRefunds.map((r) => r.id).join(",") || "(status only)"} · ${isFullRefund ? "full" : "partial"} · £${newAmount.toFixed(2)} · order ${order.orderNumber}`,
   );
 
-  // Restock — only for full refunds. Partial refunds keep stock as-is
-  // (operator can manually adjust if needed).
-  if (isFullRefund) {
+  // Restock — only when the order becomes fully refunded. Partial refunds keep
+  // stock as-is (operator can adjust manually).
+  if (becomesFullyRefunded) {
     const productsContainer = await getContainer("products");
     const movementsContainer = await getContainer("stock-movements");
-    for (const it of (order.items || []) as Array<{ stripePriceId?: string; quantity: number; name: string }>) {
+    for (const it of (order.items || []) as Array<{ stripePriceId?: string; stripeProductId?: string; quantity: number; name: string }>) {
       if (!it.stripePriceId) continue;
       try {
+        // Match like the sale side does: by price, by a variant's price, or by
+        // Stripe product (a quantity-break promo price matches no variant).
         const { resources: matches } = await productsContainer.items
           .query({
             query: `SELECT * FROM c WHERE c.partitionKey = 'product' AND (
                       c.stripePriceId = @pid
+                      OR c.stripeProductId = @prod
                       OR EXISTS(SELECT VALUE v FROM v IN c.variants WHERE v.stripePriceId = @pid)
                     )`,
-            parameters: [{ name: "@pid", value: it.stripePriceId }],
+            parameters: [
+              { name: "@pid", value: it.stripePriceId },
+              { name: "@prod", value: it.stripeProductId || "" },
+            ],
           })
           .fetchAll();
         if (matches.length === 0) continue;
         const product = matches[0];
         const qty = it.quantity || 0;
         if (qty <= 0) continue;
-        const variant = Array.isArray(product.variants)
-          ? product.variants.find((v: { stripePriceId?: string; id?: string }) => v.stripePriceId === it.stripePriceId)
-          : null;
+
+        type V = { stripePriceId?: string; id?: string };
+        const variants: V[] = Array.isArray(product.variants) ? product.variants : [];
+        let variant = variants.find((v) => v.stripePriceId === it.stripePriceId) || null;
+        if (!variant && variants.length > 0) {
+          // Promo price: the variant id is in the price metadata.
+          try {
+            const price = await stripe.prices.retrieve(it.stripePriceId);
+            const promoVariantId = price.metadata?.promoVariantId || "";
+            if (promoVariantId) variant = variants.find((v) => v.id === promoVariantId) || null;
+          } catch (err) {
+            console.error(`[${rid}] price lookup for restock failed (${it.stripePriceId}):`, err);
+          }
+        }
 
         let writeOk = false;
         if (variant?.id) {
@@ -534,43 +642,48 @@ async function handleRefund(rid: string, charge: Stripe.Charge) {
         console.error(`[${rid}] restock failed for ${it.name}:`, err);
       }
     }
-
   }
 
-  // Customer aggregates: full refunds reverse totalOrders + totalSpent by
-  // the full order total; partial refunds only reduce totalSpent by the
-  // refunded amount (the order still counts).
-  if (order.customerId) {
+  // Customer aggregates: spend drops by exactly the newly recorded refunds
+  // (so partial + final refunds add up to the order total, never more); the
+  // order stops counting only when it becomes fully refunded.
+  if (order.customerId && (newAmount > 0 || becomesFullyRefunded)) {
     try {
       const customers = await getContainer("customers");
-      const { resource: customer } = await customers.item(order.customerId, "customer").read();
-      if (customer) {
-        if (isFullRefund) {
-          customer.totalOrders = Math.max(0, (customer.totalOrders || 1) - 1);
-          customer.totalSpent = Math.max(0, (customer.totalSpent || 0) - (order.total || 0));
-        } else {
-          customer.totalSpent = Math.max(0, (customer.totalSpent || 0) - refundAmount);
-        }
+      for (let attempt = 0; attempt < 5; attempt++) {
+        const { resource: customer } = await customers.item(order.customerId, "customer").read();
+        if (!customer) break;
+        customer.totalSpent = Math.max(0, (customer.totalSpent || 0) - newAmount);
+        if (becomesFullyRefunded) customer.totalOrders = Math.max(0, (customer.totalOrders || 1) - 1);
         customer.updatedAt = new Date().toISOString();
-        await customers.item(order.customerId, "customer").replace(customer);
+        try {
+          await customers.item(order.customerId, "customer").replace(customer, {
+            accessCondition: { type: "IfMatch", condition: customer._etag },
+          });
+          break;
+        } catch (err) {
+          if ((err as { code?: number }).code !== 412) throw err;
+        }
       }
     } catch (err) {
       console.error(`[${rid}] customer aggregate adjustment failed:`, err);
     }
   }
 
-  // Refund confirmation email — never throws.
+  // One refund email per newly recorded refund — never throws.
   if (order.customerEmail) {
-    try {
-      const { subject, html } = renderRefundConfirmationEmail({
-        customerName: order.customerName || "",
-        orderNumber: order.orderNumber,
-        amount: refundAmount,
-        type: isFullRefund ? "full" : "partial",
-      });
-      await sendEmail(rid, { to: order.customerEmail, subject, html });
-    } catch (err) {
-      console.error(`[${rid}] refund email failed:`, err);
+    for (const r of newRefunds) {
+      try {
+        const { subject, html } = renderRefundConfirmationEmail({
+          customerName: order.customerName || "",
+          orderNumber: order.orderNumber,
+          amount: (r.amount || 0) / 100,
+          type: isFullRefund ? "full" : "partial",
+        });
+        await sendEmail(rid, { to: order.customerEmail, subject, html });
+      } catch (err) {
+        console.error(`[${rid}] refund email failed:`, err);
+      }
     }
   }
 }

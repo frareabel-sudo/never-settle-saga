@@ -1,6 +1,7 @@
 "use client";
 
 import { Product, ProductVariant } from "./data";
+import { promoFor } from "./pricing";
 
 export interface CartItem {
   product: Product;
@@ -48,7 +49,14 @@ function lineKey(item: CartItem): string {
   return `${item.product.id}::${item.variant?.id ?? "BASE"}::${item.customisation ?? "NONE"}`;
 }
 
-function unitPrice(item: CartItem): number {
+/** Unit price the checkout will charge — includes quantity-break promotions. */
+export function cartUnitPrice(item: CartItem): number {
+  const promo = promoFor(item.product.promotions, item.variant?.id, item.quantity);
+  return promo ? promo.price : (item.variant?.price ?? item.product.price);
+}
+
+/** List price before any quantity break, for showing a strikethrough. */
+export function cartListPrice(item: CartItem): number {
   return item.variant?.price ?? item.product.price;
 }
 
@@ -66,7 +74,7 @@ export const cartStore = {
   getTotal(): number {
     loadFromStorage();
     return cartItems.reduce(
-      (sum, item) => sum + unitPrice(item) * item.quantity,
+      (sum, item) => sum + cartUnitPrice(item) * item.quantity,
       0
     );
   },
@@ -139,5 +147,5 @@ export const cartStore = {
   },
 
   lineKey,
-  unitPrice,
+  unitPrice: cartUnitPrice,
 };

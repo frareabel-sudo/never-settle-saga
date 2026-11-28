@@ -6,9 +6,10 @@ import { useEffect, useState } from "react";
 import { Trash2, Minus, Plus, ShoppingBag, Truck } from "lucide-react";
 import { useCart } from "@/hooks/use-cart";
 import { whatsAppLink } from "@/lib/personalisation";
+import { cartUnitPrice, cartListPrice } from "@/lib/cart-store";
 
 interface ShippingSettings {
-  rates: Array<{ id: string; label: string; priceGBP: number }>;
+  rates: Array<{ id: string; label: string; priceGBP: number; region?: string }>;
   freeShippingThresholdGBP: number;
   freeShippingMethod: string;
 }
@@ -123,7 +124,8 @@ export default function CartPage() {
           <ul className="space-y-4">
             {items.map((item) => {
               const key = lineKey(item);
-              const unit = item.variant?.price ?? item.product.price;
+              const unit = cartUnitPrice(item);
+              const listUnit = cartListPrice(item);
               const variantLabel = item.variant
                 ? Object.entries(item.variant.optionValues)
                     .map(([, v]) => v)
@@ -188,7 +190,12 @@ export default function CartPage() {
                           <Plus className="w-3 h-3" />
                         </button>
                       </div>
-                      <span className="text-brand-500 font-semibold">
+                      <span className="text-brand-500 font-semibold text-right">
+                        {unit < listUnit && (
+                          <span className="block text-xs font-normal text-ink-soft line-through">
+                            £{(listUnit * item.quantity).toFixed(2)}
+                          </span>
+                        )}
                         £{(unit * item.quantity).toFixed(2)}
                       </span>
                     </div>
@@ -210,6 +217,12 @@ export default function CartPage() {
             {shipping && shipping.freeShippingThresholdGBP > 0 && (() => {
               const threshold = shipping.freeShippingThresholdGBP;
               const qualifies = total >= threshold;
+              // Only one rate becomes free (UK Tracked 48 today) — say which,
+              // so an EU customer isn't told shipping is free when it isn't.
+              const freeRate = shipping.rates.find((r) => r.id === shipping.freeShippingMethod);
+              const freeWhat = freeRate
+                ? `free ${freeRate.region === "EU" ? "EU" : "UK"} shipping (${freeRate.label})`
+                : "free shipping";
               const away = Math.max(0, threshold - total);
               const pct = Math.min(100, Math.round((total / threshold) * 100));
               return (
@@ -217,8 +230,8 @@ export default function CartPage() {
                   <div className="flex items-center gap-2 text-ink">
                     <Truck className="w-3.5 h-3.5 text-brand-500" />
                     {qualifies
-                      ? <span className="text-brand-600 font-medium">You&apos;ve unlocked free shipping 🎉</span>
-                      : <span>Add <strong className="text-brand-500">£{away.toFixed(2)}</strong> more for free shipping over £{threshold.toFixed(2)}</span>}
+                      ? <span className="text-brand-600 font-medium">You&apos;ve unlocked {freeWhat} 🎉</span>
+                      : <span>Add <strong className="text-brand-500">£{away.toFixed(2)}</strong> more for {freeWhat} over £{threshold.toFixed(2)}</span>}
                   </div>
                   <div className="mt-2 h-1 rounded-full bg-surface-alt overflow-hidden">
                     <div className="h-full bg-brand-500 transition-all" style={{ width: `${pct}%` }} />

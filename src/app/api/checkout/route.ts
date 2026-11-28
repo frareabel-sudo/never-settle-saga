@@ -3,6 +3,7 @@ import { getStripe } from "@/lib/stripe";
 import { getProductById } from "@/lib/data";
 import { findInsufficientStock } from "@/lib/cosmos";
 import { getStoreSettings } from "@/lib/store-settings";
+import { promoFor } from "@/lib/pricing";
 import {
   ensureReturningCustomerCoupon,
   hasPreviousOrder,
@@ -231,9 +232,7 @@ export async function POST(request: NextRequest) {
       // arithmetic happens here: we only select the promo price when the
       // quantity qualifies, so Stripe stays the sole owner of unit amounts.
       // Deepest qualifying tier wins (highest minQty at or below the quantity).
-      const promo = (product.promotions ?? [])
-        .filter((p) => p.variantId === (item.variantId ?? "") && item.quantity >= p.minQty)
-        .sort((a, b) => b.minQty - a.minQty)[0];
+      const promo = promoFor(product.promotions, item.variantId, item.quantity);
 
       // The Stripe line carries the discounted price, but stock stays keyed to
       // the ORIGINAL price id — findInsufficientStock resolves the Cosmos
@@ -310,7 +309,7 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    const session = await stripe.checkout.sessions.create({
+    const sessionParams: Parameters<typeof stripe.checkout.sessions.create>[0] = {
       line_items: lineItems,
       mode: "payment",
       success_url: `${request.nextUrl.origin}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
@@ -341,7 +340,27 @@ export async function POST(request: NextRequest) {
         ...(appliedCode ? { promo_code: appliedCode } : {}),
         vercel_id: request.headers.get("x-vercel-id") ?? "local",
       },
-    });
+    };
+
+    let session;
+    try {
+      session = await stripe.checkout.sessions.create(sessionParams);
+    } catch (e) {
+      // A code can be active but still refused for this cart: minimum order
+      // amount, product restrictions, first-time-customer only, expired coupon.
+      // Tell the customer it's the code, not a generic failure.
+      if (appliedCode && (e as { type?: string }).type === "StripeInvalidRequestError") {
+        console.warn(`[checkout] code ${appliedCode} refused by Stripe:`, (e as Error).message);
+        return NextResponse.json(
+          {
+            error: `${appliedCode} can't be used on this order (it may need a higher order total or only apply to some items). Remove it to carry on.`,
+            field: "code",
+          },
+          { status: 400 },
+        );
+      }
+      throw e;
+    }
 
     return NextResponse.json({ sessionId: session.id, url: session.url });
   } catch (error) {
