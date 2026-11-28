@@ -7,12 +7,8 @@ import { sendEmail } from "@/lib/email/resend";
 import { getStoreSettings } from "@/lib/store-settings";
 import { renderOrderConfirmationEmail } from "@/lib/email/templates/order-confirmation";
 import { renderRefundConfirmationEmail } from "@/lib/email/templates/refund-confirmation";
+import { customerIdForEmail } from "@/lib/returning-customer";
 import Stripe from "stripe";
-import { createHash } from "crypto";
-
-function customerIdForEmail(email: string): string {
-  return "cust_" + createHash("sha1").update(email.toLowerCase()).digest("hex");
-}
 
 // Boot-time guard — fails the function cold-start if the secret is unset,
 // so the deploy errors loudly instead of silently 500ing every webhook.

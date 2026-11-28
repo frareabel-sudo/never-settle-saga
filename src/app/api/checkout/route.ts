@@ -3,6 +3,12 @@ import { getStripe } from "@/lib/stripe";
 import { getProductById } from "@/lib/data";
 import { findInsufficientStock } from "@/lib/cosmos";
 import { getStoreSettings } from "@/lib/store-settings";
+import {
+  ensureReturningCustomerCoupon,
+  hasPreviousOrder,
+  isReturningCustomerCode,
+  RETURNING_CUSTOMER_CODE,
+} from "@/lib/returning-customer";
 
 interface CheckoutItemInput {
   productId: string;
@@ -59,7 +65,7 @@ function isRateLimited(ip: string): boolean {
 }
 
 function validateBody(raw: unknown):
-  | { ok: true; items: CheckoutItemInput[]; email: string; currency: AllowedCurrency }
+  | { ok: true; items: CheckoutItemInput[]; email: string; currency: AllowedCurrency; code: string }
   | { ok: false } {
   if (!raw || typeof raw !== "object") return { ok: false };
   const body = raw as Record<string, unknown>;
@@ -75,6 +81,11 @@ function validateBody(raw: unknown):
     return { ok: false };
   }
   const currency = currencyRaw as AllowedCurrency;
+
+  // Optional discount code typed in the cart. Empty = none.
+  const codeRaw = body.code ?? "";
+  if (typeof codeRaw !== "string" || codeRaw.length > 64) return { ok: false };
+  const code = codeRaw.trim();
 
   const items = body.items;
   if (!Array.isArray(items) || items.length < 1 || items.length > MAX_ITEMS) {
@@ -111,7 +122,7 @@ function validateBody(raw: unknown):
     });
   }
 
-  return { ok: true, items: clean, email, currency };
+  return { ok: true, items: clean, email, currency, code };
 }
 
 // Build Stripe shipping_options from Cosmos settings. Free shipping kicks in
@@ -182,7 +193,7 @@ export async function POST(request: NextRequest) {
     if (!validated.ok) {
       return NextResponse.json(GENERIC_BAD_REQUEST, { status: 400 });
     }
-    const { items, email } = validated;
+    const { items, email, code } = validated;
 
     // Server-side price lookup — NEVER trust client price/name.
     const lineItems: Array<{ price: string; quantity: number }> = [];
@@ -250,13 +261,62 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Inventory check unavailable, please retry shortly" }, { status: 503 });
     }
 
-    const session = await getStripe().checkout.sessions.create({
+    // Discount code typed in the cart. Stripe allows either a pre-applied
+    // discount OR the promo-code box on its page, never both — so a code from
+    // the cart replaces the box, and an empty cart field keeps the box (where
+    // seasonal codes like BLACKFRIDAY25 have always been typed). One code per
+    // order: the returning-customer code doesn't stack with a sale code.
+    const stripe = getStripe();
+    let discountParams:
+      | { discounts: Array<{ coupon: string } | { promotion_code: string }> }
+      | { allow_promotion_codes: true } = { allow_promotion_codes: true };
+    let appliedCode = "";
+    if (code) {
+      if (isReturningCustomerCode(code)) {
+        let eligible: boolean;
+        try {
+          eligible = await hasPreviousOrder(email);
+        } catch (e) {
+          console.error("[checkout] returning-customer lookup failed:", e);
+          return NextResponse.json(
+            { error: "We couldn't check that code just now — please try again in a moment." },
+            { status: 503 },
+          );
+        }
+        if (!eligible) {
+          return NextResponse.json(
+            {
+              error: `${RETURNING_CUSTOMER_CODE} is for returning customers. Use the same email as your previous order — or remove the code to carry on.`,
+              field: "code",
+            },
+            { status: 400 },
+          );
+        }
+        discountParams = { discounts: [{ coupon: await ensureReturningCustomerCoupon(stripe) }] };
+        appliedCode = RETURNING_CUSTOMER_CODE;
+      } else {
+        // Any other code: look it up as a regular Stripe promotion code, so a
+        // customer who types BLACKFRIDAY25 in the cart isn't turned away.
+        const found = await stripe.promotionCodes.list({ code, active: true, limit: 1 });
+        const promo = found.data[0];
+        if (!promo) {
+          return NextResponse.json(
+            { error: "That code isn't valid. Check the spelling, or remove it to carry on.", field: "code" },
+            { status: 400 },
+          );
+        }
+        discountParams = { discounts: [{ promotion_code: promo.id }] };
+        appliedCode = promo.code;
+      }
+    }
+
+    const session = await stripe.checkout.sessions.create({
       line_items: lineItems,
       mode: "payment",
       success_url: `${request.nextUrl.origin}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${request.nextUrl.origin}/shop`,
       customer_email: email,
-      allow_promotion_codes: true,
+      ...discountParams,
       shipping_address_collection: {
         allowed_countries: [...ALLOWED_SHIPPING_COUNTRIES],
       },
@@ -278,6 +338,7 @@ export async function POST(request: NextRequest) {
       metadata: {
         customer_email: email,
         client_ip: ip,
+        ...(appliedCode ? { promo_code: appliedCode } : {}),
         vercel_id: request.headers.get("x-vercel-id") ?? "local",
       },
     });

@@ -16,6 +16,8 @@ interface ShippingSettings {
 export default function CartPage() {
   const { items, total, updateLineQuantity, removeLine, lineKey } = useCart();
   const [email, setEmail] = useState("");
+  const [code, setCode] = useState("");
+  const [codeError, setCodeError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [shipping, setShipping] = useState<ShippingSettings | null>(null);
@@ -44,6 +46,7 @@ export default function CartPage() {
 
   async function handleCheckout() {
     setError(null);
+    setCodeError(null);
     setStockIssue(null);
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       setError("Please enter a valid email address.");
@@ -59,6 +62,7 @@ export default function CartPage() {
         body: JSON.stringify({
           email,
           currency: "gbp",
+          ...(code.trim() ? { code: code.trim() } : {}),
           items: items.map((i) => ({
             productId: i.product.id,
             quantity: i.quantity,
@@ -76,6 +80,8 @@ export default function CartPage() {
             available: data.available,
             requested: data.requested,
           });
+        } else if (data.field === "code") {
+          setCodeError(data.error);
         } else {
           setError(data.error || "Unable to start checkout.");
         }
@@ -231,6 +237,27 @@ export default function CartPage() {
                 placeholder="you@example.com"
                 className="w-full px-3 py-2 rounded-lg bg-surface border border-surface-line text-ink placeholder-ink-soft focus:outline-none focus:border-brand-500"
               />
+            </div>
+            <div>
+              <label htmlFor="discount-code" className="block text-sm text-ink-muted mb-2">
+                Discount code <span className="text-ink-soft">(optional)</span>
+              </label>
+              <input
+                id="discount-code"
+                type="text"
+                value={code}
+                onChange={(e) => {
+                  setCode(e.target.value.toUpperCase());
+                  setCodeError(null);
+                }}
+                placeholder="Enter code"
+                autoComplete="off"
+                autoCapitalize="characters"
+                spellCheck={false}
+                maxLength={64}
+                className={`w-full px-3 py-2 rounded-lg bg-surface border text-ink placeholder-ink-soft uppercase focus:outline-none focus:border-brand-500 ${codeError ? "border-red-400" : "border-surface-line"}`}
+              />
+              {codeError && <p className="mt-2 text-sm text-red-400">{codeError}</p>}
             </div>
             {error && <p className="text-sm text-red-400">{error}</p>}
 
