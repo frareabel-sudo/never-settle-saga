@@ -17,6 +17,8 @@ interface ShippingSettings {
 
 export default function CartPage() {
   const { items, total, updateLineQuantity, removeLine, lineKey } = useCart();
+  // Multi-buy prices and discount codes don't stack (one discount per order).
+  const hasMultiBuy = items.some((i) => cartUnitPrice(i) < cartListPrice(i));
   const [email, setEmail] = useState("");
   const [code, setCode] = useState("");
   const [codeError, setCodeError] = useState<string | null>(null);
@@ -324,6 +326,12 @@ export default function CartPage() {
                 className={`w-full px-3 py-2 rounded-lg bg-surface border text-ink placeholder-ink-soft uppercase focus:outline-none focus:border-brand-500 ${codeError ? "border-red-400" : "border-surface-line"}`}
               />
               {codeError && <p className="mt-2 text-sm text-red-400">{codeError}</p>}
+              {!codeError && hasMultiBuy && (
+                <p className="mt-2 text-xs text-ink-soft">
+                  Your cart has multi-buy prices, so discount codes can&apos;t be added to
+                  this order (one discount per order).
+                </p>
+              )}
             </div>
             {error && <p className="text-sm text-red-400">{error}</p>}
 

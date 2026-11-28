@@ -268,6 +268,9 @@ export async function POST(request: NextRequest) {
     const stockCheckItems: Array<{ stripePriceId: string; quantity: number; productId: string; variantId?: string }> = [];
     const personalisationNotes: string[] = [];
     let subtotalGBP = 0;
+    // Any line at a quantity-break ("multi-buy") price. Decision 28/11/2026:
+    // one discount per order — multi-buy prices and discount codes don't stack.
+    let hasMultiBuy = false;
     for (const g of Array.from(groups.values())) {
       const { product, priceId } = g;
       let unitPrice = g.unitPrice;
@@ -284,6 +287,7 @@ export async function POST(request: NextRequest) {
       // quantity qualifies, so Stripe stays the sole owner of unit amounts.
       // Deepest qualifying tier wins (highest minQty at or below the quantity).
       const promo = promoFor(product.promotions, item.variantId, item.quantity);
+      if (promo) hasMultiBuy = true;
 
       // The Stripe line carries the discounted price, but stock stays keyed to
       // the ORIGINAL price id — findInsufficientStock resolves the Cosmos
@@ -323,10 +327,22 @@ export async function POST(request: NextRequest) {
     // seasonal codes like BLACKFRIDAY25 have always been typed). One code per
     // order: the returning-customer code doesn't stack with a sale code.
     const stripe = getStripe();
+    // With a multi-buy price in the cart the Stripe promo box is hidden too,
+    // or a code typed there would stack on top of it.
     let discountParams:
       | { discounts: Array<{ coupon: string } | { promotion_code: string }> }
-      | { allow_promotion_codes: true } = { allow_promotion_codes: true };
+      | { allow_promotion_codes: true }
+      | Record<string, never> = hasMultiBuy ? {} : { allow_promotion_codes: true };
     let appliedCode = "";
+    if (code && hasMultiBuy) {
+      return NextResponse.json(
+        {
+          error: "Discount codes can't be combined with multi-buy prices. Keep the multi-buy price and remove the code, or lower the quantity to use the code instead.",
+          field: "code",
+        },
+        { status: 400 },
+      );
+    }
     if (code) {
       if (isReturningCustomerCode(code)) {
         let eligible: boolean;

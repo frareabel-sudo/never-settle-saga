@@ -343,7 +343,7 @@ export default function ProductClient({
                       ))}
                     </ul>
                     <p className="mt-1.5 text-[11px] text-ink-soft">
-                      Discount applied automatically at checkout.
+                      Discount applied automatically at checkout. Not combinable with discount codes.
                     </p>
                   </div>
                 )}
