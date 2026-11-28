@@ -36,6 +36,11 @@ export type Campaign = {
   cta: string;
   /** Card colour. */
   accent: string;
+  /**
+   * Written onto every order placed while the campaign runs (order notes in
+   * Command Centre), for offers the till can't apply — e.g. a free gift.
+   */
+  orderNote?: string;
   /** Short text for the floating corner bubble. */
   bubbleTop: string;
   bubbleBottom: string;
@@ -70,6 +75,7 @@ const CAMPAIGNS: Campaign[] = [
     offerBig: "Free surprise gift",
     offerSmall: "",
     offerNote: "A little handmade treat, tucked into your parcel.",
+    orderNote: "Christmas campaign: add a free surprise gift to this parcel.",
     cta: "Shop Christmas gifts",
     accent: "#1F6B4A",
     bubbleTop: "Free",

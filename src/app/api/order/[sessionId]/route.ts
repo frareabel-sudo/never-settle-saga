@@ -27,7 +27,8 @@ export async function GET(_req: NextRequest, ctx: { params: Promise<{ sessionId:
     const o = resources[0];
     return NextResponse.json({
       orderNumber: o.orderNumber,
-      customerEmail: o.customerEmail,
+      // Email left out: the page doesn't show it, and anyone holding the
+      // session id (browser history, a shared link) shouldn't get it.
       customerName: o.customerName,
       items: (o.items || []).map((i: { name: string; options?: string; quantity: number; unitPrice: number; lineTotal?: number }) => ({
         name: i.name,

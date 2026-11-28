@@ -49,10 +49,29 @@ function lineKey(item: CartItem): string {
   return `${item.product.id}::${item.variant?.id ?? "BASE"}::${item.customisation ?? "NONE"}`;
 }
 
+/**
+ * Quantity of this product+variant across ALL cart lines. Lines differ only by
+ * personalisation text, and the checkout merges them before choosing the
+ * quantity-break tier — so three mugs with three names count as 3.
+ */
+function groupQuantity(item: CartItem, items: CartItem[] = cartItems): number {
+  const vid = item.variant?.id ?? "";
+  return items
+    .filter((i) => i.product.id === item.product.id && (i.variant?.id ?? "") === vid)
+    .reduce((sum, i) => sum + i.quantity, 0);
+}
+
 /** Unit price the checkout will charge — includes quantity-break promotions. */
 export function cartUnitPrice(item: CartItem): number {
-  const promo = promoFor(item.product.promotions, item.variant?.id, item.quantity);
+  loadFromStorage();
+  const promo = promoFor(item.product.promotions, item.variant?.id, groupQuantity(item));
   return promo ? promo.price : (item.variant?.price ?? item.product.price);
+}
+
+/** Total units of this line's product+variant in the cart (all lines). */
+export function cartGroupQuantity(item: CartItem): number {
+  loadFromStorage();
+  return groupQuantity(item);
 }
 
 /** List price before any quantity break, for showing a strikethrough. */
@@ -100,6 +119,37 @@ export const cartStore = {
       cartItems = [...cartItems, candidate];
     }
     notify();
+  },
+
+  /**
+   * Replace each line's product/variant snapshot with the current storefront
+   * version. Lines whose product or variant is no longer for sale are removed.
+   * Returns what changed so the cart can tell the shopper.
+   */
+  refresh(current: Product[]): { removed: string[]; repriced: string[] } {
+    loadFromStorage();
+    const byId = new Map(current.map((p) => [p.id, p]));
+    const removed: string[] = [];
+    const repriced: string[] = [];
+    const next: CartItem[] = [];
+    for (const item of cartItems) {
+      const fresh = byId.get(item.product.id);
+      const freshVariant = item.variant
+        ? fresh?.variants?.find((v) => v.id === item.variant!.id && v.active && v.publishToWebsite !== false)
+        : undefined;
+      if (!fresh || (item.variant && !freshVariant)) {
+        removed.push(item.product.name);
+        continue;
+      }
+      const before = item.variant?.price ?? item.product.price;
+      const after = freshVariant?.price ?? fresh.price;
+      if (before !== after) repriced.push(fresh.name);
+      next.push({ ...item, product: fresh, variant: freshVariant });
+    }
+    cartItems = next;
+    notify();
+    // One mention per product, however many personalised lines it has.
+    return { removed: Array.from(new Set(removed)), repriced: Array.from(new Set(repriced)) };
   },
 
   removeLine(key: string) {

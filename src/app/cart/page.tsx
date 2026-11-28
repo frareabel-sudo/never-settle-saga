@@ -6,7 +6,8 @@ import { useEffect, useState } from "react";
 import { Trash2, Minus, Plus, ShoppingBag, Truck } from "lucide-react";
 import { useCart } from "@/hooks/use-cart";
 import { whatsAppLink } from "@/lib/personalisation";
-import { cartUnitPrice, cartListPrice } from "@/lib/cart-store";
+import { cartStore, cartUnitPrice, cartListPrice, cartGroupQuantity } from "@/lib/cart-store";
+import type { Product } from "@/lib/data";
 
 interface ShippingSettings {
   rates: Array<{ id: string; label: string; priceGBP: number; region?: string }>;
@@ -29,9 +30,36 @@ export default function CartPage() {
    */
   const [stockIssue, setStockIssue] = useState<{
     productId: string;
+    variantId?: string;
     available: number;
     requested: number;
   } | null>(null);
+  /** Set when checkout says a line is no longer for sale. */
+  const [unavailable, setUnavailable] = useState<{ productId: string; variantId?: string } | null>(null);
+  /** What changed when the cart was refreshed against the live shop. */
+  const [cartNotice, setCartNotice] = useState<string | null>(null);
+
+  // The cart is a snapshot from when each item was added. Bring it up to date
+  // once per visit: current prices, and drop anything no longer for sale.
+  useEffect(() => {
+    const ids = Array.from(new Set(cartStore.getItems().map((i) => i.product.id)));
+    if (ids.length === 0) return;
+    fetch("/api/cart/refresh", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ids }),
+    })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d: { products?: Product[] } | null) => {
+        if (!d?.products) return;
+        const { removed, repriced } = cartStore.refresh(d.products);
+        const parts: string[] = [];
+        if (removed.length) parts.push(`${removed.join(", ")} ${removed.length === 1 ? "is" : "are"} no longer available and ${removed.length === 1 ? "was" : "were"} removed from your cart.`);
+        if (repriced.length) parts.push(`The price of ${repriced.join(", ")} has changed; your cart shows the current price.`);
+        if (parts.length) setCartNotice(parts.join(" "));
+      })
+      .catch(() => { /* non-blocking; checkout re-checks everything */ });
+  }, []);
 
   useEffect(() => {
     fetch("/api/settings/shipping")
@@ -49,6 +77,7 @@ export default function CartPage() {
     setError(null);
     setCodeError(null);
     setStockIssue(null);
+    setUnavailable(null);
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       setError("Please enter a valid email address.");
       return;
@@ -68,6 +97,7 @@ export default function CartPage() {
             productId: i.product.id,
             quantity: i.quantity,
             ...(i.variant ? { variantId: i.variant.id } : {}),
+            ...(i.customisation ? { customisation: i.customisation } : {}),
           })),
         }),
       });
@@ -78,9 +108,12 @@ export default function CartPage() {
         if (res.status === 409 && typeof data.available === "number") {
           setStockIssue({
             productId: data.productId,
+            variantId: data.variantId,
             available: data.available,
             requested: data.requested,
           });
+        } else if (res.status === 409 && data.error === "Product unavailable") {
+          setUnavailable({ productId: data.productId, variantId: data.variantId });
         } else if (data.field === "code") {
           setCodeError(data.error);
         } else {
@@ -129,10 +162,11 @@ export default function CartPage() {
               // Next quantity-break tier for this line. Shown once the shopper
               // is at least halfway there — e.g. 9 cost more than 10 (£179.91
               // vs £139.90) and nothing said so.
+              const groupQty = cartGroupQuantity(item);
               const nextTier = (item.product.promotions ?? [])
-                .filter((p) => p.variantId === (item.variant?.id ?? "") && p.minQty > item.quantity && p.price < unit)
+                .filter((p) => p.variantId === (item.variant?.id ?? "") && p.minQty > groupQty && p.price < unit)
                 .sort((a, b) => a.minQty - b.minQty)[0];
-              const showNextTier = nextTier && item.quantity * 2 >= nextTier.minQty;
+              const showNextTier = nextTier && groupQty * 2 >= nextTier.minQty;
               const variantLabel = item.variant
                 ? Object.entries(item.variant.optionValues)
                     .map(([, v]) => v)
@@ -208,10 +242,10 @@ export default function CartPage() {
                     </div>
                     {showNextTier && nextTier && (
                       <p className="mt-2 text-xs text-brand-600">
-                        Add {nextTier.minQty - item.quantity} more to pay £{nextTier.price.toFixed(2)} each
+                        Add {nextTier.minQty - groupQty} more to pay £{nextTier.price.toFixed(2)} each
                         {" "}(£{(nextTier.price * nextTier.minQty).toFixed(2)} for {nextTier.minQty}).{" "}
                         <button
-                          onClick={() => updateLineQuantity(key, nextTier.minQty)}
+                          onClick={() => updateLineQuantity(key, item.quantity + (nextTier.minQty - groupQty))}
                           className="font-medium underline underline-offset-2 hover:text-brand-700"
                         >
                           Make it {nextTier.minQty}
@@ -293,11 +327,47 @@ export default function CartPage() {
             </div>
             {error && <p className="text-sm text-red-400">{error}</p>}
 
+            {cartNotice && (
+              <p className="rounded-lg border border-brand-500/40 bg-brand-500/5 p-3 text-sm text-ink">
+                {cartNotice}
+              </p>
+            )}
+
+            {/* A line that's no longer for sale: name it and remove it in one
+                tap, instead of a dead-end "Invalid request". */}
+            {unavailable && (() => {
+              const line = items.find(
+                (i) => i.product.id === unavailable.productId && (i.variant?.id ?? undefined) === (unavailable.variantId ?? undefined),
+              ) ?? items.find((i) => i.product.id === unavailable.productId);
+              const name = line?.product.name ?? "One of your items";
+              return (
+                <div className="rounded-lg border border-brand-500/50 bg-brand-500/5 p-3 space-y-2">
+                  <p className="text-sm text-foreground">
+                    <strong>{name}</strong> is no longer available.
+                  </p>
+                  {line && (
+                    <button
+                      onClick={() => {
+                        removeLine(lineKey(line));
+                        setUnavailable(null);
+                      }}
+                      className="text-sm font-medium text-brand-600 hover:text-brand-700 underline underline-offset-4"
+                    >
+                      Remove it and carry on
+                    </button>
+                  )}
+                </div>
+              );
+            })()}
+
             {/* Stock shortage — say the number, fix it in one tap, and offer the
                 bulk route. A bare "Insufficient stock" sends a wholesale
                 customer away without ever talking to us. */}
             {stockIssue && (() => {
-              const line = items.find((i) => i.product.id === stockIssue.productId);
+              const line =
+                items.find(
+                  (i) => i.product.id === stockIssue.productId && (i.variant?.id ?? undefined) === (stockIssue.variantId ?? undefined),
+                ) ?? items.find((i) => i.product.id === stockIssue.productId);
               const name = line?.product.name ?? "One of your items";
               const bulkLink = whatsAppLink(
                 whatsAppNumber,

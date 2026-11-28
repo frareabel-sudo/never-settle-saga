@@ -44,7 +44,8 @@ export async function generateOrderNumber(): Promise<string> {
   // probability is negligible across realistic order volumes and there is
   // no Cosmos read-modify-write cycle. Async signature kept for callers.
   const suffix = crypto.randomUUID().slice(0, 8).toUpperCase().replace(/-/g, "");
-  return `NSS-ORD-${suffix}`;
+  // DCS = DreamCraft Studio (orders before 28/11/2026 carry NSS-ORD-).
+  return `DCS-ORD-${suffix}`;
 }
 
 export function deterministicOrderId(stripeSessionId: string): string {
@@ -55,9 +56,11 @@ export function deterministicOrderId(stripeSessionId: string): string {
 }
 
 // Pre-checkout stock check. Returns first item that is short, or null if all OK.
+// Callers pass one entry per product/variant (the checkout merges cart lines
+// first), so two lines of the same item are checked against stock together.
 export async function findInsufficientStock(
   items: Array<{ stripePriceId: string; quantity: number; productId: string; variantId?: string }>,
-): Promise<{ productId: string; available: number; requested: number } | null> {
+): Promise<{ productId: string; variantId?: string; available: number; requested: number } | null> {
   if (items.length === 0) return null;
   const products = await getContainer("products");
   for (const it of items) {
@@ -77,11 +80,13 @@ export async function findInsufficientStock(
     const variant = Array.isArray(product.variants)
       ? product.variants.find((v: { stripePriceId?: string; stock?: number }) => v.stripePriceId === it.stripePriceId)
       : null;
-    const available = variant
-      ? Number(variant.stock) || 0
-      : Number(product.stockQuantity) || 0;
+    const raw = variant ? variant.stock : product.stockQuantity;
+    // No stock count at all (null/undefined) = not tracked: don't block the
+    // sale. A real 0 still blocks.
+    if (raw === undefined || raw === null || raw === "") continue;
+    const available = Number(raw) || 0;
     if (available < it.quantity) {
-      return { productId: it.productId, available, requested: it.quantity };
+      return { productId: it.productId, variantId: it.variantId, available, requested: it.quantity };
     }
   }
   return null;

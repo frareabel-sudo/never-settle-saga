@@ -28,6 +28,13 @@ export interface OrderConfirmationInput {
   shippingName?: string;
   /** From store settings; omitted or blank hides the photo block entirely. */
   whatsAppNumber?: string;
+  /**
+   * Delivery estimate of the rate the customer picked, as Stripe showed it
+   * ("5–8 business days"). Falls back to a guess from the method name.
+   */
+  deliveryEstimate?: string;
+  /** Personalisation text per product, e.g. 'Mug: "Emma" x1'. */
+  personalisation?: string[];
 }
 
 function etaFor(method: string): string {
@@ -48,7 +55,7 @@ export function renderOrderConfirmationEmail(input: OrderConfirmationInput): {
   html: string;
 } {
   const method = niceMethod(input.shippingMethod);
-  const eta = etaFor(method);
+  const eta = input.deliveryEstimate || etaFor(method);
   const date = new Date(input.createdAt).toLocaleDateString("en-GB", {
     day: "numeric",
     month: "long",
@@ -79,6 +86,22 @@ export function renderOrderConfirmationEmail(input: OrderConfirmationInput): {
         }</td><td align="right" style="color:#7FD88F;padding:4px 0;">− ${gbp(
           input.discountAmount,
         )}</td></tr>`
+      : "";
+
+  // Echo the personalisation text back so the customer can spot a typo before
+  // we make it.
+  const personalisationBlock =
+    input.personalisation && input.personalisation.length > 0
+      ? `
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 18px 0;">
+      <tr><td style="background:${BRAND.card};border:1px solid ${BRAND.gold};border-radius:10px;padding:18px;">
+        <div style="color:${BRAND.gold};font-weight:700;font-size:16px;margin:0 0 6px 0;">Your personalisation</div>
+        ${input.personalisation
+          .map((p) => `<p style="margin:0 0 4px 0;color:${BRAND.fg};font-size:14px;">${esc(p)}</p>`)
+          .join("")}
+        <p style="margin:10px 0 0 0;color:${BRAND.muted};font-size:12px;">Spotted a typo? Reply to this email before we start making it.</p>
+      </td></tr>
+    </table>`
       : "";
 
   // Photo request — only when the order actually contains something that needs
@@ -140,6 +163,7 @@ export function renderOrderConfirmationEmail(input: OrderConfirmationInput): {
     <p style="margin:0 0 18px 0;color:${BRAND.fg};">Hi ${esc(firstName(input.customerName))}, we've received your order and are getting it ready.</p>
     ${corporateBlock}
     ${photoBlock}
+    ${personalisationBlock}
 
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 18px 0;">
       <tr>

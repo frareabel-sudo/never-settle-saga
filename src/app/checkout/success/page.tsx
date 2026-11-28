@@ -7,7 +7,7 @@ import { cartStore } from "@/lib/cart-store";
 
 interface OrderSummary {
   orderNumber: string;
-  customerEmail: string;
+  customerEmail?: string;
   customerName?: string;
   items: Array<{ name: string; options?: string; quantity: number; unitPrice: number; lineTotal: number }>;
   subtotal?: number;
@@ -44,7 +44,10 @@ function OrderConfirmation() {
     if (!sessionId) { setPending(false); return; }
     let cancelled = false;
     let attempts = 0;
-    const maxAttempts = 6;
+    // ~30 s. The webhook usually lands in 1-3 s, but Klarna/Revolut and a
+    // slow Stripe retry can take longer; giving up at 9 s showed the raw
+    // Stripe session id as the "order reference".
+    const maxAttempts = 20;
 
     async function poll() {
       try {
@@ -137,9 +140,11 @@ function OrderConfirmation() {
 
         {!pending && !order && sessionId && (
           <div className="bg-surface-alt border border-brand-500/20 rounded-lg p-4 text-center">
-            <p className="text-sm text-ink-muted">Order reference</p>
-            <p className="text-brand-500 font-mono text-xs mt-1 break-all">{sessionId}</p>
-            <p className="text-xs text-ink-soft mt-2">Your receipt will arrive by email shortly.</p>
+            <p className="text-sm text-ink">Payment received — thank you!</p>
+            <p className="text-xs text-ink-soft mt-2">
+              We&apos;re still putting your order together. Your confirmation, with your
+              order number, will arrive by email in the next few minutes.
+            </p>
           </div>
         )}
 

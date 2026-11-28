@@ -3,6 +3,7 @@ import { getStripe } from "@/lib/stripe";
 import { getProductById } from "@/lib/data";
 import { findInsufficientStock } from "@/lib/cosmos";
 import { getStoreSettings } from "@/lib/store-settings";
+import { activeCampaign } from "@/lib/campaigns";
 import { promoFor } from "@/lib/pricing";
 import {
   ensureReturningCustomerCoupon,
@@ -15,7 +16,11 @@ interface CheckoutItemInput {
   productId: string;
   quantity: number;
   variantId?: string;
+  /** Personalisation text the customer typed on the product page. */
+  customisation?: string;
 }
+
+const MAX_CUSTOMISATION = 200;
 
 const ALLOWED_CURRENCIES = ["gbp", "usd", "eur"] as const;
 type AllowedCurrency = (typeof ALLOWED_CURRENCIES)[number];
@@ -34,7 +39,7 @@ const GENERIC_BAD_REQUEST = { error: "Invalid request" } as const;
 // controls are the primary defence; this just throttles obvious abuse
 // within a single instance. Client IP is also forwarded into session
 // metadata for post-hoc auditing.
-const RATE_LIMIT_MAX = 5;
+const RATE_LIMIT_MAX = 10;
 const RATE_LIMIT_WINDOW_MS = 60_000;
 const rateLimitStore: Map<string, number[]> = new Map();
 
@@ -100,6 +105,13 @@ function validateBody(raw: unknown):
     const productId = it.productId;
     const quantity = it.quantity;
     const variantId = it.variantId;
+    const customisation = it.customisation;
+    if (
+      customisation !== undefined &&
+      (typeof customisation !== "string" || customisation.length > MAX_CUSTOMISATION)
+    ) {
+      return { ok: false };
+    }
     if (typeof productId !== "string" || productId.length === 0 || productId.length > 100) {
       return { ok: false };
     }
@@ -120,6 +132,9 @@ function validateBody(raw: unknown):
       productId,
       quantity,
       ...(typeof variantId === "string" ? { variantId } : {}),
+      ...(typeof customisation === "string" && customisation.trim()
+        ? { customisation: customisation.trim() }
+        : {}),
     });
   }
 
@@ -197,35 +212,71 @@ export async function POST(request: NextRequest) {
     const { items, email, code } = validated;
 
     // Server-side price lookup — NEVER trust client price/name.
-    const lineItems: Array<{ price: string; quantity: number }> = [];
-    const stockCheckItems: Array<{ stripePriceId: string; quantity: number; productId: string; variantId?: string }> = [];
-    let subtotalGBP = 0;
+    //
+    // Cart lines for the same product+variant (e.g. three mugs with three
+    // different names) are merged first: the quantity-break tier and the stock
+    // check apply to the total, and Stripe gets one line per price. Each
+    // line's personalisation text is kept and travels in session metadata.
+    type Group = {
+      product: NonNullable<Awaited<ReturnType<typeof getProductById>>>;
+      productId: string;
+      variantId?: string;
+      variantLabel: string;
+      priceId: string;
+      unitPrice: number;
+      quantity: number;
+      personalisation: Array<{ text: string; quantity: number }>;
+    };
+    const groups = new Map<string, Group>();
     for (const item of items) {
       const product = await getProductById(item.productId);
-      if (!product) {
-        return NextResponse.json(GENERIC_BAD_REQUEST, { status: 400 });
-      }
-      if (product.publishToWebsite === false) {
-        return NextResponse.json(
-          { error: "Product unavailable", productId: item.productId },
+      // Gone, unpublished or a removed variant: tell the cart which line, so
+      // it can offer to remove it instead of a bare "Invalid request".
+      const unavailable = () =>
+        NextResponse.json(
+          { error: "Product unavailable", productId: item.productId, variantId: item.variantId },
           { status: 409 },
         );
-      }
+      if (!product || product.publishToWebsite === false) return unavailable();
       let priceId = product.stripePriceId;
       let unitPrice = product.price;
-      if (item.variantId && product.variants) {
-        const variant = product.variants.find((v) => v.id === item.variantId && v.active);
-        if (!variant) {
-          return NextResponse.json(GENERIC_BAD_REQUEST, { status: 400 });
-        }
-        if (variant.publishToWebsite === false) {
-          return NextResponse.json(
-            { error: "Variant unavailable", productId: item.productId, variantId: item.variantId },
-            { status: 409 },
-          );
-        }
+      let variantLabel = "";
+      if (item.variantId) {
+        const variant = (product.variants ?? []).find((v) => v.id === item.variantId && v.active);
+        if (!variant || variant.publishToWebsite === false) return unavailable();
         priceId = variant.stripePriceId;
         unitPrice = variant.price;
+        variantLabel = Object.values(variant.optionValues ?? {}).join(" · ");
+      }
+      const key = `${product.id}::${item.variantId ?? ""}`;
+      const g = groups.get(key) ?? {
+        product,
+        productId: item.productId,
+        variantId: item.variantId,
+        variantLabel,
+        priceId,
+        unitPrice,
+        quantity: 0,
+        personalisation: [],
+      };
+      g.quantity += item.quantity;
+      if (item.customisation) g.personalisation.push({ text: item.customisation, quantity: item.quantity });
+      groups.set(key, g);
+    }
+
+    const lineItems: Array<{ price: string; quantity: number }> = [];
+    const stockCheckItems: Array<{ stripePriceId: string; quantity: number; productId: string; variantId?: string }> = [];
+    const personalisationNotes: string[] = [];
+    let subtotalGBP = 0;
+    for (const g of Array.from(groups.values())) {
+      const { product, priceId } = g;
+      let unitPrice = g.unitPrice;
+      const item = { variantId: g.variantId, quantity: g.quantity, productId: g.productId };
+      if (g.personalisation.length > 0) {
+        const label = g.variantLabel ? `${product.name} (${g.variantLabel})` : product.name;
+        personalisationNotes.push(
+          `${label}: ${g.personalisation.map((p) => `"${p.text}" x${p.quantity}`).join("; ")}`,
+        );
       }
       // v3.34 — Quantity-break promotions. The operator defines the rule in
       // Command Centre, which materialises it as an extra Stripe price. No
@@ -250,7 +301,13 @@ export async function POST(request: NextRequest) {
       const short = await findInsufficientStock(stockCheckItems);
       if (short) {
         return NextResponse.json(
-          { error: "Insufficient stock", productId: short.productId, available: short.available, requested: short.requested },
+          {
+            error: "Insufficient stock",
+            productId: short.productId,
+            variantId: short.variantId,
+            available: short.available,
+            requested: short.requested,
+          },
           { status: 409 },
         );
       }
@@ -309,6 +366,10 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // A running campaign whose offer the till can't apply (Christmas free
+    // gift) leaves a note on the order so the packer doesn't have to remember.
+    const campaignNote = activeCampaign()?.orderNote ?? "";
+
     const sessionParams: Parameters<typeof stripe.checkout.sessions.create>[0] = {
       line_items: lineItems,
       mode: "payment",
@@ -337,6 +398,12 @@ export async function POST(request: NextRequest) {
       metadata: {
         customer_email: email,
         client_ip: ip,
+        // Personalisation text per product (one key each; Stripe allows 500
+        // chars a value and 50 keys). The webhook copies these onto the order.
+        ...Object.fromEntries(
+          personalisationNotes.slice(0, 20).map((note, i) => [`personalisation_${i}`, note.slice(0, 500)]),
+        ),
+        ...(campaignNote ? { campaign_note: campaignNote.slice(0, 500) } : {}),
         ...(appliedCode ? { promo_code: appliedCode } : {}),
         vercel_id: request.headers.get("x-vercel-id") ?? "local",
       },

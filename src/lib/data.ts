@@ -333,6 +333,7 @@ async function fetchProductsFromStripe(): Promise<Product[]> {
   });
 
   const products: Product[] = [];
+  const createdById = new Map<string, number>();
   for (const sp of list.data) {
     const defaultPrice = sp.default_price;
     if (
@@ -360,6 +361,7 @@ async function fetchProductsFromStripe(): Promise<Product[]> {
       defaultPrice.id,
     );
 
+    createdById.set(sp.id, sp.created ?? 0);
     products.push({
       id: sp.id,
       stripePriceId: defaultPrice.id,
@@ -385,6 +387,17 @@ async function fetchProductsFromStripe(): Promise<Product[]> {
       variants,
       promotions,
     });
+  }
+
+  // Two products with the same name got the same slug, so the second one could
+  // never be opened (every link resolved to the first). The oldest keeps the
+  // plain slug; later ones get a short, stable suffix from their Stripe id.
+  const bySlug = new Map<string, Product[]>();
+  for (const p of products) bySlug.set(p.slug, [...(bySlug.get(p.slug) ?? []), p]);
+  for (const group of Array.from(bySlug.values())) {
+    if (group.length < 2) continue;
+    group.sort((a, b) => (createdById.get(a.id) ?? 0) - (createdById.get(b.id) ?? 0));
+    for (const p of group.slice(1)) p.slug = `${p.slug}-${p.id.slice(-6).toLowerCase()}`;
   }
 
   return enrichFromCosmos(products);

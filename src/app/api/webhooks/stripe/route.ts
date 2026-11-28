@@ -83,6 +83,11 @@ async function recordCustomerOrder(customerId: string, c: CustomerOrderInput, ri
   console.error(`[${rid}] customer ${customerId} aggregate update gave up after retries`);
 }
 
+// A v2 order left unfinished (stock/email) is resumed by a later delivery only
+// once its last claim is this old, so a delivery still working on it — or the
+// near-simultaneous payment_intent.succeeded twin — never runs it twice.
+const RESUME_AFTER_MS = 2 * 60_000;
+
 // Persist an order to Cosmos and deduct stock atomically-ish.
 // Idempotent on stripeSessionId — re-delivery of the webhook is a no-op.
 async function persistOrderFromSession(sessionId: string, rid = "-") {
@@ -129,11 +134,24 @@ async function persistOrderFromSession(sessionId: string, rid = "-") {
 
   // True idempotency: try a point-read on the deterministic id. If it exists,
   // a previous webhook delivery already persisted this order. No race window.
+  //
+  // Exception: a v2 order whose stock deduction or confirmation email never
+  // finished (the function died after the insert) and whose last claim is
+  // stale is resumed below, so Stripe's retry completes it instead of
+  // skipping it forever.
+  let resumeFrom: (Record<string, unknown> & { _etag?: string }) | null = null;
   try {
     const { resource } = await ordersContainer.item(orderId, "order").read();
     if (resource) {
-      console.log(`[webhook] order already persisted for session ${sessionId}`);
-      return;
+      const claimedAt = Date.parse(String(resource.fulfilmentClaimedAt || "")) || 0;
+      const unfinished = !resource.stockDeducted || !resource.emailSentAt || !resource.customerRecordedAt;
+      if (resource.fulfilmentVersion === 2 && unfinished && Date.now() - claimedAt > RESUME_AFTER_MS) {
+        resumeFrom = resource;
+        console.log(`[${rid}] order ${resource.orderNumber} unfinished — resuming fulfilment`);
+      } else {
+        console.log(`[webhook] order already persisted for session ${sessionId}`);
+        return;
+      }
     }
   } catch (err) {
     // 404 expected on first delivery; rethrow anything else.
@@ -205,7 +223,26 @@ async function persistOrderFromSession(sessionId: string, rid = "-") {
   // Customer notes via checkout custom_fields
   const customFields = (session as unknown as { custom_fields?: Array<{ key: string; text?: { value?: string | null } | null; label?: { custom?: string | null } | null }> }).custom_fields || [];
   const notesField = customFields.find((f) => /note|instruction|comment/i.test(f.key) || /note|instruction|comment/i.test(f.label?.custom || ""));
-  const customerNotes = notesField?.text?.value || "";
+  const typedNotes = notesField?.text?.value || "";
+
+  // Personalisation text per product and any campaign note (Christmas free
+  // gift) travel in session metadata — see the checkout route. They go on the
+  // order as their own fields AND into customerNotes, which Command Centre
+  // already shows on every order.
+  const meta = session.metadata ?? {};
+  const personalisation = Object.keys(meta)
+    .filter((k) => k.startsWith("personalisation_"))
+    .sort((a, b) => Number(a.split("_")[1]) - Number(b.split("_")[1]))
+    .map((k) => meta[k])
+    .filter(Boolean);
+  const campaignNote = meta.campaign_note || "";
+  const customerNotes = [
+    typedNotes,
+    personalisation.length ? `Personalisation:\n${personalisation.join("\n")}` : "",
+    campaignNote,
+  ]
+    .filter(Boolean)
+    .join("\n\n");
 
   const orderNumber = await generateOrderNumber();
 
@@ -215,12 +252,147 @@ async function persistOrderFromSession(sessionId: string, rid = "-") {
     shipping_cost?: { shipping_rate?: { display_name?: string } | string | null } | null;
   }).shipping_cost;
   const shippingRate = shippingCost && typeof shippingCost.shipping_rate === "object"
-    ? shippingCost.shipping_rate
+    ? (shippingCost.shipping_rate as {
+        display_name?: string;
+        delivery_estimate?: {
+          minimum?: { unit?: string; value?: number } | null;
+          maximum?: { unit?: string; value?: number } | null;
+        } | null;
+      })
     : null;
+  const est = shippingRate?.delivery_estimate;
+  const deliveryEstimate =
+    est?.minimum?.value && est?.maximum?.value
+      ? `${est.minimum.value}–${est.maximum.value} ${est.maximum.unit === "business_day" ? "business days" : `${est.maximum.unit ?? "day"}s`.replace("_", " ")}`
+      : "";
   const shippingAmount = (session.total_details?.amount_shipping || 0) / 100;
   const shippingMethod =
     shippingRate?.display_name ||
     (shippingAmount >= 6 ? "Royal Mail Tracked 24" : "Royal Mail Tracked 48");
+
+  // Stock + confirmation email, recording progress on the order so a later
+  // delivery can finish whatever is missing without repeating what's done.
+  const finish = async (
+    useOrderNumber: string,
+    alreadyDeducted: string[],
+    emailAlreadySent: boolean,
+    customerAlreadyRecorded: boolean,
+  ) => {
+    // Customer aggregates — once per order (only the creating delivery, or a
+    // resume of an order whose creator died before getting here).
+    let customerRecordedAt = "";
+    if (customerAlreadyRecorded) {
+      customerRecordedAt = "already";
+    } else if (!customerId) {
+      customerRecordedAt = "no-customer";
+    } else {
+      try {
+        await recordCustomerOrder(customerId, {
+          email,
+          name,
+          phone,
+          shippingAddress: formattedAddress,
+          currency: session.currency || "gbp",
+          orderTotal: (session.amount_total || 0) / 100,
+          orderAt: new Date(session.created * 1000).toISOString(),
+        }, rid);
+        customerRecordedAt = new Date().toISOString();
+      } catch (err) {
+        console.error(`[${rid}] customer aggregate update failed for order ${useOrderNumber}:`, err);
+      }
+    }
+
+    const newlyDeducted = await deductStockForLineItems(lineItems, new Set(alreadyDeducted));
+    const deductedLines = [...alreadyDeducted, ...newlyDeducted];
+    if (deductedLines.length < lineItems.length) {
+      console.warn(
+        `[${rid}] partial stock deduction (${deductedLines.length}/${lineItems.length}) — order ${useOrderNumber} left unflagged; CC can still finish deduction on delivery`,
+      );
+    }
+
+    let emailSentAt = "";
+    if (emailAlreadySent) {
+      emailSentAt = "already";
+    } else if (!email) {
+      emailSentAt = "no-email";
+    } else {
+      try {
+        // Personalised lines ask the customer for a photo over WhatsApp. The
+        // number lives in store settings so it can change without a deploy; a
+        // lookup failure must never cost us the confirmation email.
+        let waNumberForEmail = "";
+        try {
+          waNumberForEmail = (await getStoreSettings()).contact?.social?.whatsapp || "";
+        } catch (err) {
+          console.error(`[${rid}] store settings lookup for WhatsApp number failed:`, err);
+        }
+        const { subject, html } = renderOrderConfirmationEmail({
+          customerName: name,
+          orderNumber: useOrderNumber,
+          createdAt: new Date(session.created * 1000).toISOString(),
+          items: items.map((it) => ({
+            name: it.name,
+            options: it.options || undefined,
+            quantity: it.quantity,
+            unitPrice: it.lineSubtotal / (it.quantity || 1),
+            lineTotal: it.lineSubtotal,
+          })),
+          subtotal: (session.amount_subtotal || 0) / 100,
+          shipping: shippingAmount,
+          shippingMethod,
+          discountCode: discountCode || undefined,
+          discountAmount: discountAmount || undefined,
+          total: (session.amount_total || 0) / 100,
+          shippingAddress: formattedAddress,
+          shippingName: recipientName,
+          whatsAppNumber: waNumberForEmail,
+          deliveryEstimate: deliveryEstimate || undefined,
+          personalisation,
+        });
+        if (await sendEmail(rid, { to: email, subject, html })) {
+          emailSentAt = new Date().toISOString();
+        }
+      } catch (err) {
+        console.error(`[${rid}] order confirmation email failed:`, err);
+      }
+    }
+
+    // Record progress. Non-fatal: the order itself is safe.
+    try {
+      const { resource: persisted } = await ordersContainer.item(orderId, "order").read();
+      if (persisted) {
+        persisted.stockDeductedLines = deductedLines;
+        if (deductedLines.length === lineItems.length) persisted.stockDeducted = true;
+        if (emailSentAt && emailSentAt !== "already") persisted.emailSentAt = emailSentAt;
+        if (customerRecordedAt && customerRecordedAt !== "already") persisted.customerRecordedAt = customerRecordedAt;
+        persisted.updatedAt = new Date().toISOString();
+        await ordersContainer.item(orderId, "order").replace(persisted);
+      }
+    } catch (err) {
+      console.error(`[${rid}] failed to record fulfilment progress on order ${orderId}:`, err);
+    }
+  };
+
+  if (resumeFrom) {
+    // Claim it first (etag) so two retries can't both resume.
+    try {
+      await ordersContainer.item(orderId, "order").replace(
+        { ...resumeFrom, fulfilmentClaimedAt: new Date().toISOString() },
+        { accessCondition: { type: "IfMatch", condition: resumeFrom._etag || "" } },
+      );
+    } catch (err) {
+      if ((err as { code?: number }).code === 412) return; // another delivery has it
+      throw err;
+    }
+    await finish(
+      String(resumeFrom.orderNumber),
+      Array.isArray(resumeFrom.stockDeductedLines) ? (resumeFrom.stockDeductedLines as string[]) : [],
+      Boolean(resumeFrom.emailSentAt),
+      Boolean(resumeFrom.customerRecordedAt),
+    );
+    console.log(`[${rid}] resumed order ${resumeFrom.orderNumber}`);
+    return;
+  }
 
   try {
     await ordersContainer.items.create({
@@ -247,6 +419,12 @@ async function persistOrderFromSession(sessionId: string, rid = "-") {
     discountCode,
     discountAmount,
     customerNotes,
+    ...(personalisation.length ? { personalisation } : {}),
+    ...(campaignNote ? { campaignNote } : {}),
+    // v2 orders track their own fulfilment so a crashed delivery can be
+    // finished by Stripe's retry (see resumeFulfilment).
+    fulfilmentVersion: 2,
+    fulfilmentClaimedAt: new Date().toISOString(),
     shippingAddress: formattedAddress,
     shippingName: recipientName,
     shippingPhone: phone,
@@ -271,99 +449,24 @@ async function persistOrderFromSession(sessionId: string, rid = "-") {
     return;
   }
 
-  // Only the delivery that created the order gets here. Non-fatal: the order is
-  // safe, and a failure here must not make Stripe retry (the retry would see
-  // the order and skip, so throwing would gain nothing).
-  if (customerId) {
-    try {
-      await recordCustomerOrder(customerId, {
-        email,
-        name,
-        phone,
-        shippingAddress: formattedAddress,
-        currency: session.currency || "gbp",
-        orderTotal: (session.amount_total || 0) / 100,
-        orderAt: new Date(session.created * 1000).toISOString(),
-      }, rid);
-    } catch (err) {
-      console.error(`[${rid}] customer aggregate update failed for order ${orderNumber}:`, err);
-    }
-  }
-
-  // Deduct stock per line_item. Non-fatal: stock errors are logged inside
-  // deductStockForLineItems; the order is already safely persisted.
-  // `stockDeducted` counts lines that matched a Cosmos product AND deducted
-  // without throwing. If all lines succeeded, mark the order so the CC
-  // Orders page "Mark Complete" step doesn't re-deduct.
-  const deductedCount = await deductStockForLineItems(lineItems);
-  if (deductedCount === lineItems.length) {
-    try {
-      const { resource: persisted } = await ordersContainer.item(orderId, "order").read();
-      if (persisted) {
-        persisted.stockDeducted = true;
-        persisted.updatedAt = new Date().toISOString();
-        await ordersContainer.item(orderId, "order").replace(persisted);
-      }
-    } catch (err) {
-      console.error(`[${rid}] failed to flag stockDeducted on order ${orderId}:`, err);
-    }
-  } else {
-    console.warn(
-      `[${rid}] partial stock deduction (${deductedCount}/${lineItems.length}) — order ${orderNumber} left unflagged; CC can still finish deduction on delivery`,
-    );
-  }
-
+  // Only the delivery that created the order gets here.
+  await finish(orderNumber, [], false, false);
   console.log(`[${rid}] persisted order ${orderNumber} for session ${sessionId}`);
-
-  // Fire-and-forget confirmation email. Any failure is logged against rid;
-  // order is already persisted so we must never throw here.
-  if (email) {
-    try {
-      // Personalised lines ask the customer for a photo over WhatsApp. The
-      // number lives in store settings so it can change without a deploy; a
-      // lookup failure must never cost us the confirmation email.
-      let waNumberForEmail = "";
-      try {
-        waNumberForEmail = (await getStoreSettings()).contact?.social?.whatsapp || "";
-      } catch (err) {
-        console.error(`[${rid}] store settings lookup for WhatsApp number failed:`, err);
-      }
-
-      const { subject, html } = renderOrderConfirmationEmail({
-        customerName: name,
-        orderNumber,
-        createdAt: new Date(session.created * 1000).toISOString(),
-        items: items.map((it) => ({
-          name: it.name,
-          options: it.options || undefined,
-          quantity: it.quantity,
-          unitPrice: it.lineSubtotal / (it.quantity || 1),
-          lineTotal: it.lineSubtotal,
-        })),
-        subtotal: (session.amount_subtotal || 0) / 100,
-        shipping: shippingAmount,
-        shippingMethod,
-        discountCode: discountCode || undefined,
-        discountAmount: discountAmount || undefined,
-        total: (session.amount_total || 0) / 100,
-        shippingAddress: formattedAddress,
-        shippingName: recipientName,
-        whatsAppNumber: waNumberForEmail,
-      });
-      await sendEmail(rid, { to: email, subject, html });
-    } catch (err) {
-      console.error(`[${rid}] order confirmation email failed:`, err);
-    }
-  }
 }
 
-async function deductStockForLineItems(lineItems: Stripe.LineItem[]): Promise<number> {
-  if (lineItems.length === 0) return 0;
+// Returns the line item ids it deducted. `skip` = ids already deducted by an
+// earlier delivery of the same order.
+async function deductStockForLineItems(
+  lineItems: Stripe.LineItem[],
+  skip: Set<string> = new Set(),
+): Promise<string[]> {
+  const done: string[] = [];
+  if (lineItems.length === 0) return done;
   const productsContainer = await getContainer("products");
   const movementsContainer = await getContainer("stock-movements");
-  let deducted = 0;
 
   for (const li of lineItems) {
+    if (skip.has(li.id)) continue;
     try {
       const price = li.price as Stripe.Price | null;
       if (!price) continue;
@@ -437,13 +540,13 @@ async function deductStockForLineItems(lineItems: Stripe.LineItem[]): Promise<nu
         reason: `Stripe order ${li.id} (${deductedFrom})`,
         createdAt: new Date().toISOString(),
       });
-      deducted++;
+      done.push(li.id);
     } catch (err) {
       console.error(`[webhook] stock deduction failed for line_item ${li.id}:`, err);
       // Continue with remaining items — don't fail the webhook.
     }
   }
-  return deducted;
+  return done;
 }
 
 async function persistFailedPayment(rid: string, paymentIntent: Stripe.PaymentIntent) {
