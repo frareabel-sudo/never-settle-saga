@@ -126,6 +126,13 @@ export default function CartPage() {
               const key = lineKey(item);
               const unit = cartUnitPrice(item);
               const listUnit = cartListPrice(item);
+              // Next quantity-break tier for this line. Shown once the shopper
+              // is at least halfway there — e.g. 9 cost more than 10 (£179.91
+              // vs £139.90) and nothing said so.
+              const nextTier = (item.product.promotions ?? [])
+                .filter((p) => p.variantId === (item.variant?.id ?? "") && p.minQty > item.quantity && p.price < unit)
+                .sort((a, b) => a.minQty - b.minQty)[0];
+              const showNextTier = nextTier && item.quantity * 2 >= nextTier.minQty;
               const variantLabel = item.variant
                 ? Object.entries(item.variant.optionValues)
                     .map(([, v]) => v)
@@ -199,6 +206,18 @@ export default function CartPage() {
                         £{(unit * item.quantity).toFixed(2)}
                       </span>
                     </div>
+                    {showNextTier && nextTier && (
+                      <p className="mt-2 text-xs text-brand-600">
+                        Add {nextTier.minQty - item.quantity} more to pay £{nextTier.price.toFixed(2)} each
+                        {" "}(£{(nextTier.price * nextTier.minQty).toFixed(2)} for {nextTier.minQty}).{" "}
+                        <button
+                          onClick={() => updateLineQuantity(key, nextTier.minQty)}
+                          className="font-medium underline underline-offset-2 hover:text-brand-700"
+                        >
+                          Make it {nextTier.minQty}
+                        </button>
+                      </p>
+                    )}
                   </div>
                 </li>
               );

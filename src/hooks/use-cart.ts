@@ -1,13 +1,20 @@
 "use client";
 
 import { useSyncExternalStore } from "react";
-import { cartStore } from "@/lib/cart-store";
+import { cartStore, type CartItem } from "@/lib/cart-store";
+
+// The server always renders an empty cart (it can't see localStorage), so the
+// hydration snapshot must be empty too — returning the stored items here made
+// React throw hydration errors #418/#423 on /cart whenever the cart had items.
+// Must be a stable reference, or useSyncExternalStore loops.
+const EMPTY_CART: CartItem[] = [];
+const emptyCart = () => EMPTY_CART;
 
 export function useCart() {
   const items = useSyncExternalStore(
     cartStore.subscribe,
     cartStore.getItems,
-    cartStore.getItems
+    emptyCart
   );
   const count = useSyncExternalStore(
     cartStore.subscribe,

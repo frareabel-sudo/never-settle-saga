@@ -35,6 +35,7 @@ import {
   isPersonalisable,
   whatsAppLink,
 } from "@/lib/personalisation";
+import { promoFor } from "@/lib/pricing";
 
 export default function ProductClient({
   product,
@@ -102,6 +103,11 @@ export default function ProductClient({
 
   const displayPrice = selectedVariant?.price ?? product.price;
   const canAddToCart = !hasVariants || Boolean(selectedVariant);
+  // What the checkout will actually charge for this quantity — a quantity
+  // break (e.g. 10+ at £13.99) lowers the unit price, so the button must show
+  // the same total the cart and Stripe will.
+  const qtyPromo = promoFor(product.promotions, selectedVariant?.id, quantity);
+  const lineTotal = (qtyPromo ? qtyPromo.price : displayPrice) * quantity;
 
   // v3.34 — Promotions that apply to what the shopper currently has selected.
   // Variant products key promos by variant id; simple products use "".
@@ -581,19 +587,21 @@ export default function ProductClient({
                     )}
 
                     {/* Quantity & Add to Cart */}
-                    <div className="flex items-center gap-4 mb-8">
-                      <div className="flex items-center border border-surface-line rounded">
+                    <div className="flex items-center gap-3 sm:gap-4 mb-8">
+                      <div className="flex shrink-0 items-center border border-surface-line rounded">
                         <button
                           onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                          aria-label="Decrease quantity"
                           className="p-2.5 text-ink-muted hover:text-foreground transition-colors"
                         >
                           <Minus className="w-4 h-4" />
                         </button>
-                        <span className="w-12 text-center text-sm font-medium">
+                        <span className="w-10 sm:w-12 text-center text-sm font-medium">
                           {quantity}
                         </span>
                         <button
                           onClick={() => setQuantity(quantity + 1)}
+                          aria-label="Increase quantity"
                           className="p-2.5 text-ink-muted hover:text-foreground transition-colors"
                         >
                           <Plus className="w-4 h-4" />
@@ -601,7 +609,9 @@ export default function ProductClient({
                       </div>
                       <Button
                         size="lg"
-                        className="flex-1 gap-2"
+                        // min-w-0 + short label on phones: the full "Add to Cart —
+                        // £199.90" didn't fit at 375px and pushed the page sideways.
+                        className="flex-1 min-w-0 gap-2 px-4 sm:px-8"
                         disabled={!canAddToCart}
                         onClick={() => {
                           for (let i = 0; i < quantity; i++) {
@@ -613,9 +623,15 @@ export default function ProductClient({
                         }}
                       >
                         <ShoppingBag className="w-5 h-5" />
-                        {canAddToCart
-                          ? `Add to Cart — ${formatPrice(displayPrice * quantity)}`
-                          : "Select options"}
+                        {canAddToCart ? (
+                          <span className="truncate">
+                            <span className="hidden sm:inline">Add to Cart — </span>
+                            <span className="sm:hidden">Add · </span>
+                            {formatPrice(lineTotal)}
+                          </span>
+                        ) : (
+                          "Select options"
+                        )}
                       </Button>
                     </div>
                   </>
